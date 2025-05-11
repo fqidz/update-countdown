@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script src="assets/scripts/countdown.js"></script>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h1>Updates on:</h1>
+    <div id="date-time">
+        <p>{{ date_time }}</p>
+    </div>
+    <button hx-post="/battlebit/increment" hx-target="#date-time" hx-swap="innerHTML">Refresh</button>
+</div>
+{% endblock %}

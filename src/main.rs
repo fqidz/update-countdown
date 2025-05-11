@@ -1,8 +1,13 @@
-use std::{fs, path::PathBuf, sync::{Arc, RwLock}, time::Duration};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use askama::Template;
 use axum::{
-    extract::State, http::StatusCode, response::{Html, IntoResponse, Redirect}, routing::{get, get_service}, Router
+    extract::{Path, State}, http::{StatusCode, Uri}, response::{Html, IntoResponse, Redirect}, routing::{get, get_service, post}, Router
 };
 use chrono::{DateTime, FixedOffset};
 use hashbrown::HashMap;
@@ -11,12 +16,11 @@ use tower_http::{services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
 #[template(
-    path = "layout.html",
-    blocks = [ "content" ]
+    path = "countdown.html",
 )]
-struct BattlebitTemplate {
+struct CountdownTemplate {
     title: String,
-    content: String,
+    date_time: String,
 }
 
 struct AppState {
@@ -66,6 +70,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
+        .route("/{game_name}/increment", post(increment))
         .with_state(state.into())
         .nest_service("/assets", get_service(ServeDir::new("assets")))
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
@@ -89,12 +94,34 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let date_time = date_time_write.get_mut("battlebit").unwrap();
 
     *date_time += Duration::from_secs(60);
-    let template = BattlebitTemplate {
-        title: "BattleBit Remastered | Update Countdown".to_string(),
-        content: date_time.to_rfc2822(),
+    let template = CountdownTemplate {
+        title: "BattleBit Remastered".to_string(),
+        date_time: date_time.to_rfc2822(),
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
+}
+
+async fn increment(
+    uri: Uri,
+    Path(game_name): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    if game_name != "battlebit" {
+        let template = CountdownTemplate {
+            title: "404 Page not found".to_string(),
+            date_time: format!("\"{}\" page not found", uri),
+        };
+        let html = template.render().unwrap();
+        return (StatusCode::NOT_FOUND, Html(html)).into_response();
+    }
+
+    let state_cloned = state.clone();
+    let mut date_time_write = state_cloned.date_times.write().unwrap();
+    let date_time = date_time_write.get_mut(&game_name).unwrap();
+
+    *date_time += Duration::from_secs(60);
+    (StatusCode::OK, Html(format!("<p>{}<p>", date_time.to_rfc2822()))).into_response()
 }
 
 async fn shutdown_signal() {
