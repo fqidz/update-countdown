@@ -7,37 +7,49 @@ use std::{
 
 use askama::Template;
 use axum::{
-    extract::{Path, State}, http::{StatusCode, Uri}, response::{Html, IntoResponse, Redirect}, routing::{get, get_service, post}, Router
+    Router,
+    extract::{Path, State},
+    http::{StatusCode, Uri},
+    response::{Html, IntoResponse, Redirect},
+    routing::{get, get_service, post},
 };
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use tokio::signal;
 use tower_http::{services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
-#[template(
-    path = "countdown.html",
-)]
+#[template(path = "countdown.html")]
 struct CountdownTemplate {
     title: String,
     date_time: String,
 }
 
 struct AppState {
-    date_times: RwLock<HashMap<String, DateTime<FixedOffset>>>,
+    date_times: RwLock<HashMap<String, DateTime<Utc>>>,
 }
 
 impl AppState {
+    // TODO: use serde
     fn load(path: impl Into<PathBuf>) -> Self {
         let contents = fs::read_to_string(path.into()).unwrap();
         let contents = contents
             .lines()
+            .skip(1)
             .map(|line| {
-                let (name, date_time) = line.split_once('\t').unwrap();
-                (
-                    name.to_string(),
-                    DateTime::parse_from_rfc2822(date_time).unwrap(),
-                )
+                let mut data = line.split('\t');
+                let name = data.next().unwrap();
+                let year = data.next().unwrap().parse::<i32>().unwrap();
+                if let [month, day, hour, minute, second] =
+                    data.map(|v| v.parse::<u32>().unwrap()).collect::<Vec<_>>()[..]
+                {
+                    let date_time: DateTime<Utc> = Utc
+                        .with_ymd_and_hms(year, month, day, hour, minute, second)
+                        .unwrap();
+                    return (name.to_string(), date_time);
+                } else {
+                    panic!("Save cannot be parsed.");
+                }
             })
             .collect::<HashMap<_, _>>();
         Self {
@@ -45,18 +57,18 @@ impl AppState {
         }
     }
 
-    fn to_string(&self) -> String {
+    fn to_ymd_and_hms(&self) -> String {
         self.date_times
             .read()
             .unwrap()
             .iter()
-            .map(|(name, date_time)| format!("{}\t{}", name, date_time.to_rfc2822()))
+            .map(|(name, date_time)| format!("{}\t{}", name, date_time.to_rfc3339()))
             .collect::<Vec<_>>()
             .join("\n")
     }
 
     fn save(&self, path: impl Into<PathBuf>) {
-        let contents = self.to_string();
+        let contents = self.to_ymd_and_hms();
         fs::write(path.into(), &contents).expect(&format!(
             "Could not save state. Printing contents instead:\n{}",
             &contents
@@ -96,7 +108,7 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     *date_time += Duration::from_secs(60);
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
-        date_time: date_time.to_rfc2822(),
+        date_time: date_time.timestamp_millis().to_string(),
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
@@ -121,7 +133,11 @@ async fn increment(
     let date_time = date_time_write.get_mut(&game_name).unwrap();
 
     *date_time += Duration::from_secs(60);
-    (StatusCode::OK, Html(format!("<p>{}<p>", date_time.to_rfc2822()))).into_response()
+    (
+        StatusCode::OK,
+        Html(format!("<p>{}<p>", date_time.timestamp_millis())),
+    )
+        .into_response()
 }
 
 async fn shutdown_signal() {

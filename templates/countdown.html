@@ -10,6 +10,10 @@
     <div id="date-time">
         <p>{{ date_time }}</p>
     </div>
-    <button hx-post="/battlebit/increment" hx-target="#date-time" hx-swap="innerHTML">Refresh</button>
+    <div id="countdown">
+        <p>countdown</p>
+    </div>
+    <button hx-post="/battlebit/increment" hx-target="#date-time" hx-swap="innerHTML"
+        hx-on::after-request="formatDateTime();formatCountdown()">Refresh</button>
 </div>
 {% endblock %}
