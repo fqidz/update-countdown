@@ -9,9 +9,9 @@
     <h1>Updates on:</h1>
 
     <p id="date-time">{{ date_time }}</p>
-    <p id="countdown">countdown</p>
+    <p id="countdown"></p>
 
     <button hx-post="/battlebit/increment" hx-target="#date-time" hx-swap="innerHTML"
-        hx-on::after-request="formatDateTime();formatCountdown()">Refresh</button>
+        hx-on::after-request="formatDateTime()">Refresh</button>
 </div>
 {% endblock %}
