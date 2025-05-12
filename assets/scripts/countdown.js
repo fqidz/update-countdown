@@ -4,16 +4,16 @@ document.addEventListener("DOMContentLoaded", function (event) {
 });
 
 function formatDateTime(_evt) {
-    const date_time_elem = document.getElementById("date-time").firstElementChild;
+    const date_time_elem = document.getElementById("date-time");
     const date_time = new Date(parseInt(date_time_elem.textContent));
     date_time_elem.textContent = date_time.toString();
 }
 
 function formatCountdown(_evt) {
-    const countdown_elem = document.getElementById("countdown").firstElementChild;
+    const countdown_elem = document.getElementById("countdown");
 
     const now = new Date(Date.now());
-    const date_time_elem = document.getElementById("date-time").firstElementChild;
+    const date_time_elem = document.getElementById("date-time");
     const date_time = new Date(Date.parse(date_time_elem.textContent));
 
     const diff_time = date_time.getTime() - now.getTime();

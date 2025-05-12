@@ -115,17 +115,11 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 }
 
 async fn increment(
-    uri: Uri,
     Path(game_name): Path<String>,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     if game_name != "battlebit" {
-        let template = CountdownTemplate {
-            title: "404 Page not found".to_string(),
-            date_time: format!("\"{}\" page not found", uri),
-        };
-        let html = template.render().unwrap();
-        return (StatusCode::NOT_FOUND, Html(html)).into_response();
+        return (StatusCode::NOT_FOUND).into_response();
     }
 
     let state_cloned = state.clone();
@@ -135,7 +129,7 @@ async fn increment(
     *date_time += Duration::from_secs(60);
     (
         StatusCode::OK,
-        Html(format!("<p>{}<p>", date_time.timestamp_millis())),
+        Html(date_time.timestamp_millis().to_string()),
     )
         .into_response()
 }

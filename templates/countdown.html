@@ -7,12 +7,10 @@
 {% block content %}
 <div>
     <h1>Updates on:</h1>
-    <div id="date-time">
-        <p>{{ date_time }}</p>
-    </div>
-    <div id="countdown">
-        <p>countdown</p>
-    </div>
+
+    <p id="date-time">{{ date_time }}</p>
+    <p id="countdown">countdown</p>
+
     <button hx-post="/battlebit/increment" hx-target="#date-time" hx-swap="innerHTML"
         hx-on::after-request="formatDateTime();formatCountdown()">Refresh</button>
 </div>
