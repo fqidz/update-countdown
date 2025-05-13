@@ -9,8 +9,18 @@ function formatDateTime(_evt) {
     date_time_elem.textContent = date_time.toString();
 }
 
-function formatCountdown(_evt) {
+function updateCountdown(days, hours, minutes, seconds, millis) {
     const countdown_elem = document.getElementById("countdown");
+    countdown_elem.textContent = `\
+${days}:\
+${String(hours).padStart(2, "0")}:\
+${String(minutes).padStart(2, "0")}:\
+${String(seconds).padStart(2, "0")}.\
+${String(millis).padStart(3, "0")}\
+    `;
+}
+
+function formatCountdown(_evt) {
     const date_time_elem = document.getElementById("date-time");
 
     setInterval(function() {
@@ -24,15 +34,9 @@ function formatCountdown(_evt) {
             const diff_hours = Math.floor((diff_time / (1000 * 60 * 60)) % 24);
             const diff_days = Math.floor(diff_time / (1000 * 60 * 60 * 24));
 
-            countdown_elem.textContent = `\
-${diff_days}:\
-${String(diff_hours).padStart(2, "0")}:\
-${String(diff_minutes).padStart(2, "0")}:\
-${String(diff_seconds).padStart(2, "0")}.\
-${String(diff_millis).padStart(3, "0")}\
-            `;
+            updateCountdown(diff_days, diff_hours, diff_minutes, diff_seconds, diff_millis);
         } else {
-            countdown_elem.textContent = "0:00:00:00.000";
+            updateCountdown(0, 0, 0, 0, 0);
         }
-    }, 1);
+    }, 150);
 }

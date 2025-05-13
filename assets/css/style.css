@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo+Mono:ital,wght@0,100..900;1,100..900&display=swap');
+
+html {
+    background-color: #0f0f14;
+}
+
+* {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  color: #707075;
+}
+
+.body {
+    font-size: 100%;
+}
+
+.font-display {
+  font-family: "Chivo Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: bold;
+  font-size: 10vw;
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+}
+
+button.refresh {
+    background-color: transparent;
+    display: block;
+}
+
+button > svg {
+    fill: #707075;
+}
+
+button > svg:hover {
+    fill: #505050;
+}

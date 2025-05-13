@@ -15,6 +15,9 @@
         pkgs.rust-analyzer
         pkgs.rustfmt
         pkgs.cargo
+        pkgs.typescript-language-server
+        pkgs.vscode-langservers-extracted
+        pkgs.jinja-lsp
       ];
     };
   };
