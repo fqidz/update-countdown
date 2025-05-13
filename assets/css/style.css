@@ -1,27 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Chivo+Mono:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-bg-color: #0f0f14;
+        --main-fg-color: #707075;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --main-bg-color: #f8f8fa;
+        --main-fg-color: #afafaf;
+    }
+}
 
 html {
-    background-color: #0f0f14;
+    background-color: var(--main-bg-color);
 }
 
 * {
   padding: 0px;
   margin: 0px;
   border: none;
-  color: #707075;
+  color: var(--main-fg-color);
 }
 
 .body {
     font-size: 100%;
 }
 
-.font-display {
-  font-family: "Chivo Mono", monospace;
+.font-roboto {
+  font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;
+}
+
+.font-bold {
   font-weight: 700;
   font-style: bold;
+}
+
+.font-normal {
+  font-weight: 400;
+  font-style: normal;
+}
+
+#countdown {
   font-size: 10vw;
 }
+
+#date-time {
+  font-size: 1.25em;
+}
+
+
+
+/* .font-display { */
+/*   font-family: "Roboto Mono", monospace; */
+/*   font-optical-sizing: auto; */
+/*   font-weight: 700; */
+/*   font-style: bold; */
+/*   font-size: 10vw; */
+/* } */
 
 .main {
   display: flex;
@@ -36,7 +74,7 @@ button.refresh {
 }
 
 button > svg {
-    fill: #707075;
+    fill: var(--main-fg-color);
 }
 
 button > svg:hover {

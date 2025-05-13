@@ -15,6 +15,7 @@ use axum::{
 };
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
+use rand::Rng;
 use tokio::signal;
 use tower_http::{services::ServeDir, timeout::TimeoutLayer};
 
@@ -105,7 +106,10 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let mut date_time_write = state_cloned.date_times.write().unwrap();
     let date_time = date_time_write.get_mut("battlebit").unwrap();
 
-    *date_time += Duration::from_secs(60);
+    let mut rng = rand::rng();
+    let secs = rng.random_range((25 * 60)..(35 * 60));
+
+    *date_time += Duration::from_secs(secs);
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
         date_time: date_time.timestamp_millis().to_string(),
@@ -126,7 +130,10 @@ async fn increment(
     let mut date_time_write = state_cloned.date_times.write().unwrap();
     let date_time = date_time_write.get_mut(&game_name).unwrap();
 
-    *date_time += Duration::from_secs(60);
+    let mut rng = rand::rng();
+    let secs = rng.random_range((25 * 60)..(35 * 60));
+
+    *date_time += Duration::from_secs(secs);
     (
         StatusCode::OK,
         Html(date_time.timestamp_millis().to_string()),
