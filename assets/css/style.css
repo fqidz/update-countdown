@@ -1,27 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 @media (prefers-color-scheme: dark) {
     :root {
-        --main-bg-color: #0f0f14;
-        --main-fg-color: #707075;
+        --main-bg-color: #17171B;
+        --main-fg-color: #EDECFF;
+        --dim-fg-color: #7D7C8F;
     }
 }
 
 @media (prefers-color-scheme: light) {
     :root {
-        --main-bg-color: #f8f8fa;
-        --main-fg-color: #afafaf;
+        --main-bg-color: #ff0000;
+        --main-fg-color: #00ff00;
+        --dim-fg-color: #0000ff;
     }
 }
 
-html {
-    background-color: var(--main-bg-color);
+* {
+    padding: 0px;
+    margin: 0px;
+    border: none;
 }
 
-* {
-  padding: 0px;
-  margin: 0px;
-  border: none;
-  color: var(--main-fg-color);
+.main-fg-color {
+    color: var(--main-fg-color);
+}
+
+.dim-fg-color {
+    color: var(--dim-fg-color);
+}
+
+
+html {
+    background-color: var(--main-bg-color);
 }
 
 .body {
@@ -29,43 +39,33 @@ html {
 }
 
 .font-roboto {
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
 }
 
 .font-bold {
-  font-weight: 700;
-  font-style: bold;
+    font-weight: 700;
+    font-style: bold;
 }
 
 .font-normal {
-  font-weight: 400;
-  font-style: normal;
+    font-weight: 400;
+    font-style: normal;
 }
 
 #countdown {
-  font-size: 10vw;
+    font-size: 8vw;
 }
 
 #date-time {
-  font-size: 1.25em;
+    font-size: 1.25vw;
 }
 
-
-
-/* .font-display { */
-/*   font-family: "Roboto Mono", monospace; */
-/*   font-optical-sizing: auto; */
-/*   font-weight: 700; */
-/*   font-style: bold; */
-/*   font-size: 10vw; */
-/* } */
-
-.main {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
+.main-container {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 0.1fr;
+    place-items: center;
 }
 
 button.refresh {
@@ -73,10 +73,10 @@ button.refresh {
     display: block;
 }
 
-button > svg {
+button>svg {
     fill: var(--main-fg-color);
 }
 
-button > svg:hover {
+button>svg:hover {
     fill: #505050;
 }

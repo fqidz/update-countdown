@@ -9,7 +9,7 @@ use askama::Template;
 use axum::{
     Router,
     extract::{Path, State},
-    http::{StatusCode, Uri},
+    http::StatusCode,
     response::{Html, IntoResponse, Redirect},
     routing::{get, get_service, post},
 };
@@ -156,8 +156,8 @@ async fn shutdown_signal() {
             .await;
     };
 
-    // #[cfg(not(unix))]
-    // let terminate = std::future::pending::<()>();
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
 
     tokio::select! {
         _ = ctrl_c => {},

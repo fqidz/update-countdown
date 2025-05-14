@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function (_evt) {
+document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDateTime(null);
     formatCountdown(null);
 });
