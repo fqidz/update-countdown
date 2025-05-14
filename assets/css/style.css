@@ -72,7 +72,7 @@ html {
     justify-content: center;
 }
 
-.main-container > * {
+.main-container>* {
     position: absolute;
 }
 
@@ -97,7 +97,7 @@ button.refresh>svg {
     transition-duration: 150ms;
 }
 
-button.refresh:hover > svg {
+button.refresh:hover>svg {
     fill: #505050;
     transform: rotate(20deg);
 }

@@ -1,8 +1,22 @@
+const CountdownState = Object.freeze({
+    'CompactFull': 0,
+    'CompactNoMillis': 1,
+    'VerboseScrollable': 2,
+})
+
+const countdownState = {
+    state: CountdownState.CompactFull,
+    cycleState() {
+        this.state = (this.state + 1) % 3
+    }
+};
+
+
 document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDateTime(null);
     formatCountdown(null);
     document.getElementById("countdown").addEventListener("click", function() {
-        switchCountdownDisplay();
+        countdownState.cycleState();
     });
 });
 
@@ -12,19 +26,35 @@ function formatDateTime(_evt) {
     date_time_elem.textContent = date_time.toString();
 }
 
-function switchCountdownDisplay() {
-
-}
-
 function updateCountdown(days, hours, minutes, seconds, millis) {
     const countdown_elem = document.getElementById("countdown");
-    countdown_elem.textContent = `\
+    switch (countdownState.state) {
+        case CountdownState.CompactFull:
+            countdown_elem.textContent = `\
 ${days}:\
 ${String(hours).padStart(2, "0")}:\
 ${String(minutes).padStart(2, "0")}:\
 ${String(seconds).padStart(2, "0")}.\
 ${String(millis).padStart(3, "0")}\
-    `;
+            `;
+            break;
+
+        case CountdownState.CompactNoMillis:
+            countdown_elem.textContent = `\
+${days}:\
+${String(hours).padStart(2, "0")}:\
+${String(minutes).padStart(2, "0")}:\
+${String(seconds).padStart(2, "0")}\
+            `;
+            break;
+
+        case CountdownState.VerboseScrollable:
+            countdown_elem.textContent = "testtesttest";
+            break;
+
+        default:
+            break;
+    }
 }
 
 function intervalCountdown(date_time_elem) {
