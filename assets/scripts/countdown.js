@@ -1,12 +1,19 @@
 document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDateTime(null);
     formatCountdown(null);
+    document.getElementById("countdown").addEventListener("click", function() {
+        switchCountdownDisplay();
+    });
 });
 
 function formatDateTime(_evt) {
     const date_time_elem = document.getElementById("date-time");
     const date_time = new Date(parseInt(date_time_elem.textContent));
     date_time_elem.textContent = date_time.toString();
+}
+
+function switchCountdownDisplay() {
+
 }
 
 function updateCountdown(days, hours, minutes, seconds, millis) {
@@ -43,5 +50,5 @@ function formatCountdown(_evt) {
     intervalCountdown(date_time_elem)
     setInterval(function() {
         intervalCountdown(date_time_elem)
-    }, 150);
+    }, 30);
 }
