@@ -1,16 +1,31 @@
 const CountdownState = Object.freeze({
-    'CompactFull': 0,
-    'CompactNoMillis': 1,
-    'VerboseScrollable': 2,
+    "CompactFull": 0,
+    "CompactNoMillis": 1,
+    "VerboseScrollable": 2,
+})
+
+const DatetimeState = Object.freeze({
+    "LocalTimezone": 0,
+    "Iso8601": 1,
+    "Utc": 2,
 })
 
 const countdownState = {
-    state: CountdownState.CompactFull,
-    cycleState() {
-        this.state = (this.state + 1) % 3
-    }
+    state: null,
+    cycleState: null,
 };
+const state_from_storage = localStorage.getItem("countdownState");
 
+if (state_from_storage) {
+    countdownState.state = Number(state_from_storage);
+} else {
+    countdownState.state = CountdownState.CompactFull;
+}
+
+countdownState.cycleState = function() {
+    this.state = (this.state + 1) % 3;
+    localStorage.setItem("countdownState", String(this.state));
+}
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDateTime(null);
