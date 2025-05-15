@@ -59,8 +59,9 @@ html {
     background-color: transparent;
 }
 
-#date-time {
+#datetime {
     font-size: 1.25em;
+    background-color: transparent;
 }
 
 .main-container {

@@ -5,62 +5,100 @@ const CountdownState = Object.freeze({
 })
 
 const DatetimeState = Object.freeze({
-    "LocalTimezone": 0,
+    "Utc": 0,
     "Iso8601": 1,
-    "Utc": 2,
+    "LocalTimezone": 2,
 })
 
-const countdownState = {
-    state: null,
-    cycleState: null,
-};
-const state_from_storage = localStorage.getItem("countdownState");
 
-if (state_from_storage) {
-    countdownState.state = Number(state_from_storage);
-} else {
-    countdownState.state = CountdownState.CompactFull;
+class DisplayState {
+    /**
+     * The state of a display.
+     * @param state an integer representing the state. Usually this is an enum value.
+     * @param num_states the max number of states it has.
+     * @param local_storage_name where to load and save the state.
+     */
+    constructor(state, num_states, local_storage_name) {
+        this.state = state;
+        this.num_states = num_states;
+        this.cycleState = function() {
+            this.state = (this.state + 1) % this.num_states;
+            localStorage.setItem(local_storage_name, String(this.state));
+        };
+    }
 }
 
-countdownState.cycleState = function() {
-    this.state = (this.state + 1) % 3;
-    localStorage.setItem("countdownState", String(this.state));
-}
+const countdown_state_from_storage = localStorage.getItem("countdown_state");
+const datetime_state_from_storage = localStorage.getItem("datetime_state");
+
+const countdown_state = new DisplayState(
+    Number(countdown_state_from_storage) || CountdownState.CompactFull,
+    3,
+    "countdown_state"
+)
+
+const datetime_state = new DisplayState(
+    Number(datetime_state_from_storage) || DatetimeState.Utc,
+    3,
+    "datetime_state"
+)
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
-    formatDateTime(null);
+    formatDatetime(null);
     formatCountdown(null);
     document.getElementById("countdown").addEventListener("click", function() {
-        countdownState.cycleState();
+        countdown_state.cycleState();
+    });
+    document.getElementById("datetime").addEventListener("click", function() {
+        datetime_state.cycleState();
+        updateDatetimeDisplay()
     });
 });
 
-function formatDateTime(_evt) {
-    const date_time_elem = document.getElementById("date-time");
-    const date_time = new Date(parseInt(date_time_elem.textContent));
-    date_time_elem.textContent = date_time.toString();
+let datetime = null;
+
+function updateDatetimeDisplay() {
+    const datetime_elem = document.getElementById("datetime");
+    switch (datetime_state.state) {
+        case DatetimeState.Utc:
+            datetime_elem.textContent = datetime.toUTCString();
+            break;
+        case DatetimeState.Iso8601:
+            datetime_elem.textContent = datetime.toISOString();
+            break;
+        case DatetimeState.LocalTimezone:
+            // TODO: this might dox people
+            datetime_elem.textContent = datetime.toString();
+            break;
+        default:
+            break;
+    }
 }
 
-function updateCountdown(days, hours, minutes, seconds, millis) {
+function formatDatetime(_evt) {
+    const datetime_elem = document.getElementById("datetime");
+    datetime = new Date(Number(datetime_elem.textContent));
+    updateDatetimeDisplay();
+}
+
+function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
     const countdown_elem = document.getElementById("countdown");
-    switch (countdownState.state) {
+    switch (countdown_state.state) {
         case CountdownState.CompactFull:
-            countdown_elem.textContent = `\
-${days}:\
-${String(hours).padStart(2, "0")}:\
-${String(minutes).padStart(2, "0")}:\
-${String(seconds).padStart(2, "0")}.\
-${String(millis).padStart(3, "0")}\
-            `;
+            countdown_elem.textContent =
+                days + ':' +
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, "0") + ':' +
+                String(seconds).padStart(2, "0") + '.' +
+                String(millis).padStart(3, "0");
             break;
 
         case CountdownState.CompactNoMillis:
-            countdown_elem.textContent = `\
-${days}:\
-${String(hours).padStart(2, "0")}:\
-${String(minutes).padStart(2, "0")}:\
-${String(seconds).padStart(2, "0")}\
-            `;
+            countdown_elem.textContent =
+                days + ':' +
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, "0") + ':' +
+                String(seconds).padStart(2, "0")
             break;
 
         case CountdownState.VerboseScrollable:
@@ -72,10 +110,10 @@ ${String(seconds).padStart(2, "0")}\
     }
 }
 
-function intervalCountdown(date_time_elem) {
+function intervalCountdown(datetime_elem) {
     const now = new Date(Date.now());
-    const date_time = new Date(Date.parse(date_time_elem.textContent));
-    const diff_time = date_time.getTime() - now.getTime();
+    const datetime = new Date(Date.parse(datetime_elem.textContent));
+    const diff_time = datetime.getTime() - now.getTime();
     if (diff_time > 0) {
         const diff_millis = Math.floor((diff_time % 1000));
         const diff_seconds = Math.floor((diff_time / 1000) % 60);
@@ -83,17 +121,17 @@ function intervalCountdown(date_time_elem) {
         const diff_hours = Math.floor((diff_time / (1000 * 60 * 60)) % 24);
         const diff_days = Math.floor(diff_time / (1000 * 60 * 60 * 24));
 
-        updateCountdown(diff_days, diff_hours, diff_minutes, diff_seconds, diff_millis);
+        updateCountdownDisplay(diff_days, diff_hours, diff_minutes, diff_seconds, diff_millis);
     } else {
-        updateCountdown(0, 0, 0, 0, 0);
+        updateCountdownDisplay(0, 0, 0, 0, 0);
     }
 }
 
 function formatCountdown(_evt) {
-    const date_time_elem = document.getElementById("date-time");
+    const datetime_elem = document.getElementById("datetime");
 
-    intervalCountdown(date_time_elem)
+    intervalCountdown(datetime_elem)
     setInterval(function() {
-        intervalCountdown(date_time_elem)
+        intervalCountdown(datetime_elem)
     }, 30);
 }
