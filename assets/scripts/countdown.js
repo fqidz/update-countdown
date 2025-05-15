@@ -67,8 +67,25 @@ function updateDatetimeDisplay() {
             datetime_elem.textContent = datetime.toISOString();
             break;
         case DatetimeState.LocalTimezone:
-            // TODO: this might dox people
-            datetime_elem.textContent = datetime.toString();
+            // Kind of silly, but don't use `Date.toString()` because it
+            // includes timezone name and it might dox people.
+            const date = datetime.toDateString();
+            const date_split = date.split(' ');
+            const week_day = date_split[0];
+            const month_name = date_split[1];
+            const day = date_split[2];
+            const year = date_split[3];
+
+            const time = datetime.toTimeString();
+            const parenthesis_index = time.indexOf('(');
+            const time_without_timezone_name = time.slice(0, parenthesis_index - 1);
+
+            datetime_elem.textContent =
+                week_day + ", " +
+                day + ' ' +
+                month_name + ' ' +
+                year + ' ' +
+                time_without_timezone_name;
             break;
         default:
             break;
@@ -110,9 +127,8 @@ function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
     }
 }
 
-function intervalCountdown(datetime_elem) {
+function intervalCountdown() {
     const now = new Date(Date.now());
-    const datetime = new Date(Date.parse(datetime_elem.textContent));
     const diff_time = datetime.getTime() - now.getTime();
     if (diff_time > 0) {
         const diff_millis = Math.floor((diff_time % 1000));
@@ -128,10 +144,8 @@ function intervalCountdown(datetime_elem) {
 }
 
 function formatCountdown(_evt) {
-    const datetime_elem = document.getElementById("datetime");
-
-    intervalCountdown(datetime_elem)
+    intervalCountdown()
     setInterval(function() {
-        intervalCountdown(datetime_elem)
+        intervalCountdown()
     }, 30);
 }
