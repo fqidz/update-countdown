@@ -47,11 +47,11 @@ let interval_id;
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDatetime(null);
-    formatCountdown(null);
+    startCountdownInterval();
     document.getElementById("countdown").addEventListener("click", function() {
         countdown_state.cycleState();
         changeCountdownInterval();
-        intervalCountdown();
+        updateCountdownDiffTime();
     });
     document.getElementById("datetime").addEventListener("click", function() {
         datetime_state.cycleState();
@@ -64,12 +64,12 @@ function changeCountdownInterval() {
         clearInterval(interval_id)
         switch (countdown_state.state) {
             case CountdownState.CompactFull:
-                interval_id = setInterval(intervalCountdown, 30)
+                interval_id = setInterval(updateCountdownDiffTime, 30)
                 break;
 
             case CountdownState.CompactNoMillis:
             case CountdownState.VerboseScrollable:
-                interval_id = setInterval(intervalCountdown, 500)
+                interval_id = setInterval(updateCountdownDiffTime, 500)
                 break;
 
             default:
@@ -118,7 +118,7 @@ function formatDatetime(_evt) {
     const datetime_elem = document.getElementById("datetime");
     datetime = new Date(Number(datetime_elem.textContent));
     updateDatetimeDisplay();
-    intervalCountdown();
+    updateCountdownDiffTime();
 }
 
 function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
@@ -150,7 +150,7 @@ function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
     }
 }
 
-function intervalCountdown() {
+function updateCountdownDiffTime() {
     const now = new Date(Date.now());
     const diff_time = datetime.getTime() - now.getTime();
     if (diff_time > 0) {
@@ -166,8 +166,8 @@ function intervalCountdown() {
     }
 }
 
-function formatCountdown(_evt) {
-    intervalCountdown()
+function startCountdownInterval() {
+    updateCountdownDiffTime()
     let timeout;
     switch (countdown_state.state) {
         case CountdownState.CompactFull:
@@ -184,5 +184,6 @@ function formatCountdown(_evt) {
     }
 
     console.assert(timeout);
-    interval_id = setInterval(intervalCountdown, timeout);
+    interval_id = setInterval(updateCountdownDiffTime, timeout);
 }
+
