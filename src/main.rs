@@ -83,7 +83,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
-        .route("/{game_name}/increment", post(increment))
+        .route("/{game_name}/increment-datetime", post(increment_datetime))
+        .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.into())
         .nest_service("/assets", get_service(ServeDir::new("assets")))
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
@@ -118,12 +119,12 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     (StatusCode::OK, Html(html)).into_response()
 }
 
-async fn increment(
+async fn increment_datetime(
     Path(game_name): Path<String>,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     if game_name != "battlebit" {
-        return (StatusCode::NOT_FOUND).into_response();
+        return (StatusCode::UNAUTHORIZED).into_response();
     }
 
     let state_cloned = state.clone();
@@ -134,11 +135,21 @@ async fn increment(
     let secs = rng.random_range((25 * 60)..(35 * 60));
 
     *date_time += Duration::from_secs(secs);
-    (
-        StatusCode::OK,
-        Html(date_time.timestamp_millis().to_string()),
-    )
-        .into_response()
+    (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()
+}
+
+async fn query_datetime(
+    Path(game_name): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    if game_name != "battlebit" {
+        return (StatusCode::UNAUTHORIZED).into_response();
+    }
+    let state_cloned = state.clone();
+    let date_time_read = state_cloned.date_times.read().unwrap();
+    let date_time = date_time_read.get(&game_name).unwrap();
+
+    (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()
 }
 
 async fn shutdown_signal() {

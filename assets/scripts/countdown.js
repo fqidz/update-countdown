@@ -42,20 +42,42 @@ const datetime_state = new DisplayState(
     3,
     "datetime_state"
 )
+let datetime = null;
+let interval_id;
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
     formatDatetime(null);
     formatCountdown(null);
     document.getElementById("countdown").addEventListener("click", function() {
         countdown_state.cycleState();
+        changeCountdownInterval();
+        intervalCountdown();
     });
     document.getElementById("datetime").addEventListener("click", function() {
         datetime_state.cycleState();
-        updateDatetimeDisplay()
+        updateDatetimeDisplay();
     });
 });
 
-let datetime = null;
+function changeCountdownInterval() {
+    if (interval_id) {
+        clearInterval(interval_id)
+        switch (countdown_state.state) {
+            case CountdownState.CompactFull:
+                interval_id = setInterval(intervalCountdown, 30)
+                break;
+
+            case CountdownState.CompactNoMillis:
+            case CountdownState.VerboseScrollable:
+                interval_id = setInterval(intervalCountdown, 500)
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
 
 function updateDatetimeDisplay() {
     const datetime_elem = document.getElementById("datetime");
@@ -96,6 +118,7 @@ function formatDatetime(_evt) {
     const datetime_elem = document.getElementById("datetime");
     datetime = new Date(Number(datetime_elem.textContent));
     updateDatetimeDisplay();
+    intervalCountdown();
 }
 
 function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
@@ -145,7 +168,21 @@ function intervalCountdown() {
 
 function formatCountdown(_evt) {
     intervalCountdown()
-    setInterval(function() {
-        intervalCountdown()
-    }, 30);
+    let timeout;
+    switch (countdown_state.state) {
+        case CountdownState.CompactFull:
+            timeout = 30;
+            break;
+
+        case CountdownState.CompactNoMillis:
+        case CountdownState.VerboseScrollable:
+            timeout = 500;
+            break;
+
+        default:
+            break;
+    }
+
+    console.assert(timeout);
+    interval_id = setInterval(intervalCountdown, timeout);
 }

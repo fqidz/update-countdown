@@ -94,8 +94,7 @@ button.refresh {
 
 button.refresh>svg {
     fill: var(--main-fg-color);
-    transition-property: transform;
-    transition-duration: 150ms;
+    transition: transform 150ms;
 }
 
 button.refresh:hover>svg {
