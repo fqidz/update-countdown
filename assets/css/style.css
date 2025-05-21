@@ -1,17 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 @media (prefers-color-scheme: dark) {
     :root {
-        --main-bg-color: #17171B;
-        --main-fg-color: #EDECFF;
-        --dim-fg-color: #7D7C8F;
+        --main-bg-color: 23, 23, 27;
+        --main-fg-color: 237, 236, 255;
+        --dim-fg-color: 125, 124, 143;
     }
 }
 
 @media (prefers-color-scheme: light) {
     :root {
-        --main-bg-color: #ff0000;
-        --main-fg-color: #00ff00;
-        --dim-fg-color: #0000ff;
+        --main-bg-color: 255, 0, 0;
+        --main-fg-color: 0, 255, 0;
+        --dim-fg-color: 0, 0, 255;
     }
 }
 
@@ -22,16 +22,16 @@
 }
 
 .main-fg-color {
-    color: var(--main-fg-color);
+    color: rgb(var(--main-fg-color));
 }
 
 .dim-fg-color {
-    color: var(--dim-fg-color);
+    color: rgb(var(--dim-fg-color));
 }
 
 
 html {
-    background-color: var(--main-bg-color);
+    background-color: rgb(var(--main-bg-color));
 }
 
 .body {
@@ -87,16 +87,23 @@ html {
 }
 
 .button-refresh-container {
-    bottom: 1em;
+    position: fixed;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    bottom: 0;
+    padding-top: 1vh;
+    padding-bottom: 0.8vh;
+    background-color: rgba(var(--main-bg-color), 0.9);
 }
 
 button.refresh {
     background-color: transparent;
-    display: block;
 }
 
 button.refresh>svg {
-    fill: var(--main-fg-color);
+    fill: rgb(var(--main-fg-color));
     transition: transform 150ms;
 }
 

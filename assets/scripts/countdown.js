@@ -235,6 +235,7 @@ function formatDatetime() {
     updateCountdownDiffTime();
 }
 
+// TODO: update only units that are relevant, ie. only seconds per second, minute per minute, etc.
 function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
     const countdown_elem = document.getElementById("countdown");
     switch (countdown_state.state) {
