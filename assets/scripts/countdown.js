@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
         datetime_state.cycleState();
         updateDatetimeDisplay();
     });
+    queryDatetime();
 });
 
 function changeCountdownInterval() {
@@ -187,3 +188,18 @@ function startCountdownInterval() {
     interval_id = setInterval(updateCountdownDiffTime, timeout);
 }
 
+async function queryDatetime() {
+    try {
+        fetch("/battlebit/query-datetime", {
+            method: "POST",
+            mode: "no-cors",
+        }).then((response) => response.blob())
+            .then((blob) => blob.text())
+            .then((text) => {
+                return text;
+            });
+    } catch (error) {
+        console.error(error.message);
+        return;
+    }
+}
