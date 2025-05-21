@@ -11,3 +11,10 @@ hashbrown = "0.15.3"
 rand = "0.9.1"
 tokio = { version = "1.45.0", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["full"] }
+
+[profile.release]
+opt-level = 3
+strip = true
+codegen-units = 1
+lto = "fat"
+panic = "abort"

@@ -18,6 +18,12 @@
         pkgs.typescript-language-server
         pkgs.vscode-langservers-extracted
         pkgs.jinja-lsp
+
+        pkgs.upx
+      ];
+
+      buildInputs = [
+        pkgs.lld
       ];
     };
   };

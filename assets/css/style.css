@@ -53,15 +53,18 @@ html {
     font-style: normal;
 }
 
+#countdown,
+#datetime {
+    user-select: none;
+}
+
 #countdown {
     font-size: 8em;
     line-height: 0.8em;
-    background-color: transparent;
 }
 
 #datetime {
     font-size: 1.25em;
-    background-color: transparent;
 }
 
 .main-container {
