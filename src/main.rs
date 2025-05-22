@@ -13,7 +13,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
     routing::{get, get_service, post},
 };
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use hashbrown::HashMap;
 use rand::Rng;
 use tokio::signal;
@@ -63,14 +63,23 @@ impl AppState {
             .read()
             .unwrap()
             .iter()
-            .map(|(name, date_time)| format!("{}\t{}", name, date_time.to_rfc3339()))
+            .map(|(name, date_time)| {
+                let year = date_time.year();
+                let month = date_time.month();
+                let day = date_time.day();
+                let hour = date_time.hour();
+                let minute = date_time.minute();
+                let seconds = date_time.second();
+                format!("{}\t{}\t{}\t{}\t{}\t{}\t{}", name, year, month, day, hour, minute, seconds)
+            })
             .collect::<Vec<_>>()
             .join("\n")
     }
 
     fn save(&self, path: impl Into<PathBuf>) {
+        let header = "name\tyear\tmonth\tday\thour\tminute\tsecond\n".to_string();
         let contents = self.to_ymd_and_hms();
-        fs::write(path.into(), &contents).expect(&format!(
+        fs::write(path.into(), header + &contents).expect(&format!(
             "Could not save state. Printing contents instead:\n{}",
             &contents
         ));
@@ -79,13 +88,13 @@ impl AppState {
 
 #[tokio::main]
 async fn main() {
-    let state = AppState::load("save.txt");
+    let state = Arc::new(AppState::load("save.txt"));
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
         .route("/{game_name}/increment-datetime", post(increment_datetime))
         .route("/{game_name}/query-datetime", post(query_datetime))
-        .with_state(state.into())
+        .with_state(state.clone())
         .nest_service("/assets", get_service(ServeDir::new("assets")))
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
@@ -94,8 +103,11 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
-    // state.save("save.txt");
-    println!("\nServer shutting down.");
+
+    println!("\nServer shutting down...");
+    println!("Saving state to `save.txt`");
+    state.clone().save("save.txt");
+    println!("State saved successfully");
 }
 
 async fn root() -> Redirect {
