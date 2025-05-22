@@ -3,25 +3,30 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="description" content="Countdown & Datetime until '{{ title }}' updates">
+    <meta name="keywords" content="{{ title }}, satire, countdown, time, date, update, video games">
+    <meta name="author" content="faidz">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-title" content="Update Countdown" />
+
     <title>{% block title %}{{ title }} | Update Countdown {% endblock %} </title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/style.css">
+
+    {% block head %}{% endblock %}
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
 
     <link rel="icon" type="image/png" href="/assets/favicons/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg" />
     <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
     <link rel="manifest" href="/assets/favicons/site.webmanifest" />
 
-    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
-    {% block head %}{% endblock %}
 </head>
 
 <body>
     {% block content %}
-    <p>Hello world!</p>
     {% endblock %}
 </body>
 

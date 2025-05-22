@@ -20,6 +20,7 @@
         pkgs.jinja-lsp
 
         pkgs.upx
+        pkgs.ungoogled-chromium
       ];
 
       buildInputs = [

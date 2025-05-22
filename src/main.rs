@@ -17,7 +17,7 @@ use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use hashbrown::HashMap;
 use rand::Rng;
 use tokio::signal;
-use tower_http::{services::ServeDir, timeout::TimeoutLayer};
+use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
 #[template(path = "countdown.html")]
@@ -89,6 +89,7 @@ impl AppState {
 #[tokio::main]
 async fn main() {
     let state = Arc::new(AppState::load("save.txt"));
+
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
@@ -104,7 +105,8 @@ async fn main() {
         .await
         .unwrap();
 
-    println!("\nServer shutting down...");
+    println!();
+    println!("Server shutting down...");
     println!("Saving state to `save.txt`");
     state.clone().save("save.txt");
     println!("State saved successfully");

@@ -15,7 +15,7 @@
         </div>
     </div>
     <div class="button-refresh-container">
-        <button type="button" class="refresh" hx-post="/battlebit/increment-datetime" hx-target="#datetime"
+        <button aria-label="Refresh datetime" type="button" class="refresh" hx-post="/battlebit/increment-datetime" hx-target="#datetime"
             hx-swap="innerHTML" hx-on::after-request="restartQueryInterval();formatDatetime()">
             <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960" width="48px" fill="#e3e3e3">
                 <path
