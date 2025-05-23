@@ -105,7 +105,7 @@ async fn main() {
         .route("/{game_name}/increment-datetime", post(increment_datetime))
         .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.clone())
-        .nest_service("/assets", get_service(ServeDir::new("assets")))
+        .nest_service("/assets", get_service(ServeDir::new("minified/assets")))
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 

@@ -19,6 +19,7 @@
         pkgs.vscode-langservers-extracted
         pkgs.jinja-lsp
 
+        pkgs.minify
         pkgs.upx
         pkgs.ungoogled-chromium
       ];

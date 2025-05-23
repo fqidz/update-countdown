@@ -2,6 +2,7 @@
 name = "update-countdown"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [dependencies]
 askama = { version = "0.14.0", features = ["blocks"] }
@@ -11,6 +12,10 @@ hashbrown = "0.15.3"
 rand = "0.9.1"
 tokio = { version = "1.45.0", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["full"] }
+walkdir = "2.5.0"
+
+[build-dependencies]
+walkdir = "2.5.0"
 
 [profile.release]
 opt-level = 3
