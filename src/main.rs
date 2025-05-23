@@ -1,3 +1,5 @@
+mod minify_assets;
+
 use std::{
     fs,
     path::PathBuf,
@@ -15,9 +17,12 @@ use axum::{
 };
 use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use hashbrown::HashMap;
+use minifier::js;
+use minify_assets::minify_js_and_css;
 use rand::Rng;
 use tokio::signal;
-use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
+use tower_http::{services::ServeDir, timeout::TimeoutLayer};
+use walkdir::WalkDir;
 
 #[derive(Template)]
 #[template(path = "countdown.html")]
@@ -70,7 +75,10 @@ impl AppState {
                 let hour = date_time.hour();
                 let minute = date_time.minute();
                 let seconds = date_time.second();
-                format!("{}\t{}\t{}\t{}\t{}\t{}\t{}", name, year, month, day, hour, minute, seconds)
+                format!(
+                    "{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    name, year, month, day, hour, minute, seconds
+                )
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -90,13 +98,17 @@ impl AppState {
 async fn main() {
     let state = Arc::new(AppState::load("save.txt"));
 
+    eprintln!("Minifying assets...");
+    minify_js_and_css().expect("Failed to minify assets.");
+    eprintln!("Assets minified and saved to `assets-minified`");
+
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
         .route("/{game_name}/increment-datetime", post(increment_datetime))
         .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.clone())
-        .nest_service("/assets", get_service(ServeDir::new("assets")))
+        .nest_service("/assets", get_service(ServeDir::new("assets-minified")))
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
@@ -105,11 +117,11 @@ async fn main() {
         .await
         .unwrap();
 
-    println!();
-    println!("Server shutting down...");
-    println!("Saving state to `save.txt`");
+    eprintln!();
+    eprintln!("Server shutting down...");
+    eprintln!("Saving state to `save.txt`");
     state.clone().save("save.txt");
-    println!("State saved successfully");
+    eprintln!("State saved successfully");
 }
 
 async fn root() -> Redirect {
