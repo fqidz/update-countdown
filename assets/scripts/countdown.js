@@ -10,6 +10,69 @@ const DatetimeState = Object.freeze({
     "LocalTimezone": 2,
 })
 
+class Time {
+    days;
+    hours;
+    mins;
+    secs;
+    millis;
+
+    constructor(days, hours, mins, secs, millis) {
+        this.days = days;
+        this.hours = hours;
+        this.mins = mins;
+        this.secs = secs;
+        this.millis = millis;
+    }
+
+    static fromMillis(datetime_millis) {
+        const days = Math.floor(datetime_millis / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((datetime_millis / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((datetime_millis / (1000 * 60)) % 60);
+        const secs = Math.floor((datetime_millis / 1000) % 60);
+        const millis = Math.floor((datetime_millis % 1000));
+
+        return new this(days, hours, mins, secs, millis);
+    }
+}
+
+class Countdown extends EventTarget {
+    #datetime_target;
+    #datetime_now;
+    #datetime_diff;
+    #diff_time_units;
+    interval_id;
+
+    constructor(datetime_target) {
+        this.#datetime_target = Number(datetime_target);
+        this.#datetime_now = Date.now();
+        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
+        this.#diff_time_units = Time.fromMillis(this.#datetime_diff);
+        this.interval_id = null;
+    }
+
+    #emitUpdateSecs(secs) {
+        this.dispatchEvent(new CustomEvent("updatesecs", { detail: { secs: secs } }));
+    }
+
+    #emitUpdateMillis(millis) {
+        this.dispatchEvent(new CustomEvent("updatemillis", { detail: { millis: millis } }));
+    }
+
+    #_intervalUpdate() {
+        this.#datetime_now = Date.now();
+        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
+    }
+
+    start() {
+        this.interval_id = setInterval(this.#_intervalUpdate.bind(this), 500);
+    }
+
+    updateDatetimeTarget(new_datetime_target) {
+        this.#datetime_target = new_datetime_target;
+    }
+}
+
 
 class DisplayState extends EventTarget {
     state;

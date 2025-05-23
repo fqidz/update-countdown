@@ -1,5 +1,3 @@
-mod minify_assets;
-
 use std::{
     fs,
     path::PathBuf,
@@ -17,12 +15,9 @@ use axum::{
 };
 use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use hashbrown::HashMap;
-use minifier::js;
-use minify_assets::minify_js_and_css;
 use rand::Rng;
 use tokio::signal;
-use tower_http::{services::ServeDir, timeout::TimeoutLayer};
-use walkdir::WalkDir;
+use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
 #[template(path = "countdown.html")]
@@ -85,9 +80,9 @@ impl AppState {
     }
 
     fn save(&self, path: impl Into<PathBuf>) {
-        let header = "name\tyear\tmonth\tday\thour\tminute\tsecond\n".to_string();
+        let header = "name\tyear\tmonth\tday\thour\tminute\tsecond";
         let contents = self.to_ymd_and_hms();
-        fs::write(path.into(), header + &contents).expect(&format!(
+        fs::write(path.into(), format!("{}\n{}", header, contents)).expect(&format!(
             "Could not save state. Printing contents instead:\n{}",
             &contents
         ));
@@ -98,9 +93,11 @@ impl AppState {
 async fn main() {
     let state = Arc::new(AppState::load("save.txt"));
 
-    eprintln!("Minifying assets...");
-    minify_js_and_css().expect("Failed to minify assets.");
-    eprintln!("Assets minified and saved to `assets-minified`");
+    let compression_layer = CompressionLayer::new()
+        .br(true)
+        .gzip(true)
+        .deflate(true)
+        .zstd(true);
 
     let app = Router::new()
         .route("/", get(root))
@@ -108,7 +105,8 @@ async fn main() {
         .route("/{game_name}/increment-datetime", post(increment_datetime))
         .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.clone())
-        .nest_service("/assets", get_service(ServeDir::new("assets-minified")))
+        .nest_service("/assets", get_service(ServeDir::new("assets")))
+        .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
