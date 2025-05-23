@@ -49,7 +49,9 @@ fn main() {
         match Command::new("minify").arg("--version").output() {
             Ok(_) => { /* no-op */ }
             Err(_) => {
-                panic!("\x1b[1;31m'minify' not installed (https://github.com/tdewolff/minify)\x1b[0m");
+                panic!(
+                    "\x1b[1;31m'minify' not installed (https://github.com/tdewolff/minify)\x1b[0m"
+                );
             }
         }
 
@@ -63,8 +65,7 @@ fn main() {
         // structure of the `INPUT_PATH` directory.
         for entry in entries {
             let original_path = entry.path().to_owned();
-            let new_path =
-                output_path.join(PathBuf::from_iter(original_path.components().skip(1)));
+            let new_path = output_path.join(PathBuf::from_iter(original_path.components().skip(1)));
 
             if original_path.is_dir() {
                 fs::create_dir_all(&new_path).unwrap();

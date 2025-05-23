@@ -19,9 +19,10 @@
         pkgs.vscode-langservers-extracted
         pkgs.jinja-lsp
 
-        pkgs.minify
         pkgs.upx
-        pkgs.ungoogled-chromium
+        pkgs.minify
+
+        pkgs.chromium
       ];
 
       buildInputs = [
