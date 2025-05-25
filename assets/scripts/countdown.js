@@ -137,6 +137,20 @@ let countdown_interval_id = null;
 let query_interval_id = null;
 let original_countdown_elem = null;
 
+const websocket = new WebSocket(`battlebit/websocket`);
+websocket.binaryType = "arraybuffer";
+
+let counter = 0;
+let is_websocket_open = false;
+websocket.addEventListener("open", (_evt) => {
+    is_websocket_open = true;
+})
+
+websocket.addEventListener("message", (event) => {
+    console.log(event.data);
+})
+
+
 document.addEventListener("DOMContentLoaded", function(_evt) {
     const countdown_elem = document.getElementById("countdown");
     original_countdown_elem = countdown_elem.cloneNode();
@@ -150,6 +164,11 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
     startCountdownInterval();
     query_interval_id = setQueryInterval();
 
+    document.getElementById("test").addEventListener("click", function() {
+        if (is_websocket_open) {
+            websocket.send(new Int8Array([counter++]).buffer);
+        }
+    });
     countdown_elem.addEventListener("click", function() {
         countdown_state.cycleState();
     });

@@ -8,15 +8,19 @@ use std::{
 use askama::Template;
 use axum::{
     Router,
-    extract::{Path, State},
+    extract::{
+        Path, State, WebSocketUpgrade,
+        ws::{Message, Utf8Bytes, WebSocket},
+    },
     http::StatusCode,
     response::{Html, IntoResponse, Redirect},
     routing::{get, get_service, post},
 };
 use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use futures::{SinkExt, stream::StreamExt};
 use hashbrown::HashMap;
 use rand::Rng;
-use tokio::signal;
+use tokio::{signal, sync::broadcast};
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
@@ -28,11 +32,12 @@ struct CountdownTemplate {
 
 struct AppState {
     date_times: RwLock<HashMap<String, DateTime<Utc>>>,
+    tx: broadcast::Sender<i64>,
 }
 
 impl AppState {
     // TODO: use serde
-    fn load(path: impl Into<PathBuf>) -> Self {
+    fn load(path: impl Into<PathBuf>, tx: broadcast::Sender<i64>) -> Self {
         let contents = fs::read_to_string(path.into()).unwrap();
         let contents = contents
             .lines()
@@ -55,6 +60,7 @@ impl AppState {
             .collect::<HashMap<_, _>>();
         Self {
             date_times: RwLock::new(contents),
+            tx,
         }
     }
 
@@ -91,7 +97,8 @@ impl AppState {
 
 #[tokio::main]
 async fn main() {
-    let state = Arc::new(AppState::load("save.txt"));
+    let (tx, _rx) = broadcast::channel::<i64>(2);
+    let state = Arc::new(AppState::load("save.txt", tx));
 
     let compression_layer = CompressionLayer::new()
         .br(true)
@@ -102,6 +109,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
+        .route("/{game_name}/websocket", get(websocket_handler))
         .route("/{game_name}/increment-datetime", post(increment_datetime))
         .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.clone())
@@ -124,6 +132,52 @@ async fn main() {
 
 async fn root() -> Redirect {
     Redirect::temporary("/battlebit")
+}
+
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    ws.on_upgrade(|socket| websocket(socket, state))
+}
+
+async fn websocket(stream: WebSocket, state: Arc<AppState>) {
+    let (mut sender, mut reciever) = stream.split();
+
+    let datetime_msg = state
+        .clone()
+        .date_times
+        .read()
+        .unwrap()
+        .get("battlebit")
+        .unwrap()
+        .timestamp_millis();
+
+    let mut rx = state.tx.subscribe();
+    state.tx.send(datetime_msg).unwrap();
+
+    let mut send_task = tokio::spawn(async move {
+        while let Ok(msg) = rx.recv().await {
+            if sender
+                .send(Message::Text(Utf8Bytes::from(msg.to_string())))
+                .await
+                .is_err()
+            {
+                break;
+            }
+        }
+    });
+
+    let tx = state.tx.clone();
+
+    let recieve_task = tokio::spawn(async move {
+        while let Some(Ok(Message::Binary(req))) = reciever.next().await {
+            // dbg!(req.to_vec());
+            tx.send(datetime_msg).unwrap();
+        }
+    });
+
+
 }
 
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {

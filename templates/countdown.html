@@ -14,6 +14,7 @@
             <time class="font-roboto font-normal dim-fg-color" id="datetime">{{ date_time }}</time>
         </div>
     </div>
+    <button id="test" type="button">TEST</button>
     <div class="button-refresh-container">
         <button aria-label="Refresh datetime" type="button" class="refresh" hx-post="/battlebit/increment-datetime"
             hx-target="#datetime" hx-swap="innerHTML" hx-on::after-request="restartQueryInterval();formatDatetime()">
