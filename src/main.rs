@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    path::PathBuf,
-    sync::{Arc, RwLock},
-    time::Duration,
-};
+use std::{fs, ops::Range, path::PathBuf, sync::Arc, time::Duration};
 
 use askama::Template;
 use axum::{
@@ -19,8 +14,11 @@ use axum::{
 use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use futures::{SinkExt, stream::StreamExt};
 use hashbrown::HashMap;
-use rand::Rng;
-use tokio::{signal, sync::broadcast};
+use rand::{distr::{Distribution, Uniform}, rngs::SmallRng, Rng, SeedableRng};
+use tokio::{
+    signal,
+    sync::{RwLock, broadcast},
+};
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
@@ -64,10 +62,10 @@ impl AppState {
         }
     }
 
-    fn to_ymd_and_hms(&self) -> String {
+    async fn to_ymd_and_hms(&self) -> String {
         self.date_times
             .read()
-            .unwrap()
+            .await
             .iter()
             .map(|(name, date_time)| {
                 let year = date_time.year();
@@ -85,9 +83,9 @@ impl AppState {
             .join("\n")
     }
 
-    fn save(&self, path: impl Into<PathBuf>) {
+    async fn save(&self, path: impl Into<PathBuf>) {
         let header = "name\tyear\tmonth\tday\thour\tminute\tsecond";
-        let contents = self.to_ymd_and_hms();
+        let contents = self.to_ymd_and_hms().await;
         fs::write(path.into(), format!("{}\n{}", header, contents)).expect(&format!(
             "Could not save state. Printing contents instead:\n{}",
             &contents
@@ -95,9 +93,11 @@ impl AppState {
     }
 }
 
+const SECS_INCREMENT_RANGE: Range<u64>  = (25 * 60)..(35 * 60);
+
 #[tokio::main]
 async fn main() {
-    let (tx, _rx) = broadcast::channel::<i64>(2);
+    let (tx, _rx) = broadcast::channel::<i64>(1);
     let state = Arc::new(AppState::load("save.txt", tx));
 
     let compression_layer = CompressionLayer::new()
@@ -126,7 +126,7 @@ async fn main() {
     eprintln!();
     eprintln!("Server shutting down...");
     eprintln!("Saving state to `save.txt`");
-    state.clone().save("save.txt");
+    state.clone().save("save.txt").await;
     eprintln!("State saved successfully");
 }
 
@@ -144,17 +144,27 @@ async fn websocket_handler(
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut reciever) = stream.split();
 
-    let datetime_msg = state
-        .clone()
-        .date_times
-        .read()
-        .unwrap()
-        .get("battlebit")
-        .unwrap()
-        .timestamp_millis();
+    let tx = state.tx.clone();
+
+    let mut recieve_task = tokio::spawn({
+        let state_cloned = state.clone();
+        let mut rng = SmallRng::from_os_rng();
+        let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
+        async move {
+            // Ignore message and assume it means to increment datetime
+            while let Some(Ok(_msg)) = reciever.next().await {
+                let mut date_time_write = state_cloned.date_times.write().await;
+                let date_time = date_time_write.get_mut("battlebit").unwrap();
+
+                let secs = secs_range.sample(&mut rng);
+                *date_time += Duration::from_secs(secs);
+
+                tx.send(date_time.timestamp_millis()).unwrap();
+            }
+        }
+    });
 
     let mut rx = state.tx.subscribe();
-    state.tx.send(datetime_msg).unwrap();
 
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
@@ -168,25 +178,20 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         }
     });
 
-    let tx = state.tx.clone();
 
-    let recieve_task = tokio::spawn(async move {
-        while let Some(Ok(Message::Binary(req))) = reciever.next().await {
-            // dbg!(req.to_vec());
-            tx.send(datetime_msg).unwrap();
-        }
-    });
-
-
+    tokio::select! {
+        _ = &mut send_task => recieve_task.abort(),
+        _ = &mut recieve_task => send_task.abort(),
+    };
 }
 
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let state_cloned = state.clone();
-    let mut date_time_write = state_cloned.date_times.write().unwrap();
+    let mut date_time_write = state_cloned.date_times.write().await;
     let date_time = date_time_write.get_mut("battlebit").unwrap();
 
     let mut rng = rand::rng();
-    let secs = rng.random_range((25 * 60)..(35 * 60));
+    let secs = rng.random_range(SECS_INCREMENT_RANGE);
 
     *date_time += Duration::from_secs(secs);
     let template = CountdownTemplate {
@@ -206,11 +211,11 @@ async fn increment_datetime(
     }
 
     let state_cloned = state.clone();
-    let mut date_time_write = state_cloned.date_times.write().unwrap();
+    let mut date_time_write = state_cloned.date_times.write().await;
     let date_time = date_time_write.get_mut(&game_name).unwrap();
 
     let mut rng = rand::rng();
-    let secs = rng.random_range((25 * 60)..(35 * 60));
+    let secs = rng.random_range(SECS_INCREMENT_RANGE);
 
     *date_time += Duration::from_secs(secs);
     (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()
@@ -224,7 +229,7 @@ async fn query_datetime(
         return (StatusCode::UNAUTHORIZED).into_response();
     }
     let state_cloned = state.clone();
-    let date_time_read = state_cloned.date_times.read().unwrap();
+    let date_time_read = state_cloned.date_times.read().await;
     let date_time = date_time_read.get(&game_name).unwrap();
 
     (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()

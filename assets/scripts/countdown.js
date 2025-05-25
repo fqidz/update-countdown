@@ -140,7 +140,6 @@ let original_countdown_elem = null;
 const websocket = new WebSocket(`battlebit/websocket`);
 websocket.binaryType = "arraybuffer";
 
-let counter = 0;
 let is_websocket_open = false;
 websocket.addEventListener("open", (_evt) => {
     is_websocket_open = true;
@@ -166,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
 
     document.getElementById("test").addEventListener("click", function() {
         if (is_websocket_open) {
-            websocket.send(new Int8Array([counter++]).buffer);
+            websocket.send(0);
         }
     });
     countdown_elem.addEventListener("click", function() {
