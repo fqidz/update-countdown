@@ -14,7 +14,11 @@ use axum::{
 use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use futures::{SinkExt, stream::StreamExt};
 use hashbrown::HashMap;
-use rand::{distr::{Distribution, Uniform}, rngs::SmallRng, Rng, SeedableRng};
+use rand::{
+    Rng, SeedableRng,
+    distr::{Distribution, Uniform},
+    rngs::SmallRng,
+};
 use tokio::{
     signal,
     sync::{RwLock, broadcast},
@@ -25,7 +29,7 @@ use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::Tim
 #[template(path = "countdown.html")]
 struct CountdownTemplate {
     title: String,
-    date_time: String,
+    date_time: i64,
 }
 
 struct AppState {
@@ -93,7 +97,7 @@ impl AppState {
     }
 }
 
-const SECS_INCREMENT_RANGE: Range<u64>  = (25 * 60)..(35 * 60);
+const SECS_INCREMENT_RANGE: Range<u64> = (25 * 60)..(35 * 60);
 
 #[tokio::main]
 async fn main() {
@@ -152,7 +156,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
             // Ignore message and assume it means to increment datetime
-            while let Some(Ok(_msg)) = reciever.next().await {
+            while let Some(Ok(Message::Binary(_msg))) = reciever.next().await {
                 let mut date_time_write = state_cloned.date_times.write().await;
                 let date_time = date_time_write.get_mut("battlebit").unwrap();
 
@@ -178,13 +182,16 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         }
     });
 
-
     tokio::select! {
         _ = &mut send_task => recieve_task.abort(),
         _ = &mut recieve_task => send_task.abort(),
     };
 }
 
+// Increment datetime directly when getting this page, so that the datetime is displayed
+// immediately on the page. Incrementing the datetime with the websocket after the user loads
+// the page causes flickering, because: the previous datetime would first be displayed, then
+// the increment command is sent, then the datetime is incremented and displayed on the page.
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let state_cloned = state.clone();
     let mut date_time_write = state_cloned.date_times.write().await;
@@ -192,11 +199,15 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 
     let mut rng = rand::rng();
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
-
     *date_time += Duration::from_secs(secs);
+
+    // Send the new datetime to all clients connected to websocket
+    let tx = state.tx.clone();
+    tx.send(date_time.timestamp_millis()).unwrap();
+
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
-        date_time: date_time.timestamp_millis().to_string(),
+        date_time: date_time.timestamp_millis(),
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()

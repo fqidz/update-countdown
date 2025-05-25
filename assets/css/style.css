@@ -97,16 +97,16 @@ html {
     background-color: rgba(var(--main-bg-color), 0.9);
 }
 
-button.refresh {
+button#refresh {
     background-color: transparent;
 }
 
-button.refresh>svg {
+button#refresh>svg {
     fill: rgb(var(--main-fg-color));
     transition: transform 150ms;
 }
 
-button.refresh:hover>svg {
+button#refresh:hover>svg {
     fill: #505050;
     transform: rotate(20deg);
 }

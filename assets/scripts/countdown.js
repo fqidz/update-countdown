@@ -134,7 +134,6 @@ const datetime_state = new DisplayState(
 )
 let datetime = null;
 let countdown_interval_id = null;
-let query_interval_id = null;
 let original_countdown_elem = null;
 
 const websocket = new WebSocket(`battlebit/websocket`);
@@ -143,10 +142,6 @@ websocket.binaryType = "arraybuffer";
 let is_websocket_open = false;
 websocket.addEventListener("open", (_evt) => {
     is_websocket_open = true;
-})
-
-websocket.addEventListener("message", (event) => {
-    console.log(event.data);
 })
 
 
@@ -161,13 +156,20 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
 
     formatDatetime();
     startCountdownInterval();
-    query_interval_id = setQueryInterval();
 
-    document.getElementById("test").addEventListener("click", function() {
+    document.getElementById("refresh").addEventListener("click", function() {
         if (is_websocket_open) {
-            websocket.send(0);
+            // Increment datetime
+            websocket.send(new Int8Array(0));
         }
     });
+
+    websocket.addEventListener("message", (event) => {
+        datetime = new Date(Number(event.data));
+        updateDatetimeDisplay();
+        updateCountdownDiffTime();
+    })
+
     countdown_elem.addEventListener("click", function() {
         countdown_state.cycleState();
     });
@@ -249,9 +251,9 @@ let is_document_visible = true;
 
 document.addEventListener("visibilitychange", () => {
     is_document_visible = !document.hidden;
-    if (is_document_visible === true) {
-        queryDatetimeAndUpdateDisplays();
-    }
+    // if (is_document_visible === true) {
+    //     queryDatetimeAndUpdateDisplays();
+    // }
 })
 
 function changeCountdownInterval() {
@@ -389,41 +391,4 @@ function startCountdownInterval() {
 
     console.assert(timeout);
     countdown_interval_id = setInterval(updateCountdownDiffTime, timeout);
-}
-
-function restartQueryInterval() {
-    console.assert(query_interval_id);
-    clearInterval(query_interval_id);
-    query_interval_id = setQueryInterval();
-}
-
-function setQueryInterval() {
-    return setInterval(queryDatetimeAndUpdateDisplays, 1000)
-}
-
-async function queryDatetimeAndUpdateDisplays() {
-    if (is_document_visible === true) {
-        const new_datetime = await queryDatetime();
-        if (new_datetime) {
-            datetime = new Date(Number(new_datetime));
-            updateDatetimeDisplay();
-            updateCountdownDiffTime();
-        }
-    }
-}
-
-function queryDatetime() {
-    try {
-        return fetch("/battlebit/query-datetime", {
-            method: "POST",
-            mode: "no-cors",
-        }).then((response) => response.blob())
-            .then((blob) => blob.text())
-            .then((text) => {
-                return text;
-            });
-    } catch (error) {
-        console.error(error.message);
-        return null;
-    }
 }
