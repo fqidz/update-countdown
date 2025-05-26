@@ -166,8 +166,8 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
 
     websocket.addEventListener("message", (event) => {
         datetime = new Date(Number(event.data));
-        updateDatetimeDisplay();
-        updateCountdownDiffTime();
+        // updateDatetimeDisplay();
+        // updateCountdownDiffTime();
     })
 
     countdown_elem.addEventListener("click", function() {

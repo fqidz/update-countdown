@@ -2,7 +2,7 @@
 
 oha \
     -n 200 \
-    -c 50 \
+    -c 200 \
     -z 30s \
     --fps 30 \
     --method GET \

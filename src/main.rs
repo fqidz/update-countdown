@@ -1,4 +1,10 @@
-use std::{fs, ops::Range, path::PathBuf, sync::Arc, time::{Duration, Instant}};
+use std::{
+    fs,
+    ops::Range,
+    path::PathBuf,
+    sync::Arc,
+    time::Duration,
+};
 
 use askama::Template;
 use axum::{
@@ -22,7 +28,6 @@ use rand::{
 use tokio::{
     signal,
     sync::{RwLock, broadcast},
-    time::{Interval, interval},
 };
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
@@ -173,30 +178,14 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     // TODO: Strategically decide when to send messages, depending on the amount of users
     // and volume of recieved messages.
-    let mut send_task = tokio::spawn({
-        async move {
-            let mut current_date_time;
-            let mut instant = Instant::now();
-            let mut time_since = Duration::default();
-            while let Ok(msg) = rx.recv().await {
-                let new_instant = Instant::now();
-                time_since = instant.duration_since(new_instant);
-                instant = new_instant;
-
-                if time_since.as_millis() <= 500 {
-                    current_date_time = msg;
-                    continue;
-                }
-
-                time_since = Duration::default();
-
-                if sender
-                    .send(Message::Text(Utf8Bytes::from(msg.to_string())))
-                    .await
-                    .is_err()
-                {
-                    break;
-                }
+    let mut send_task = tokio::spawn(async move {
+        while let Ok(msg) = rx.recv().await {
+            if sender
+                .send(Message::Text(Utf8Bytes::from(msg.to_string())))
+                .await
+                .is_err()
+            {
+                break;
             }
         }
     });
