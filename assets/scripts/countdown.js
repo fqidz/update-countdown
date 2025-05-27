@@ -10,13 +10,25 @@ const DatetimeState = Object.freeze({
     "LocalTimezone": 2,
 })
 
-class Time {
+class TimeUnits {
+    /** @type {number} */
     days;
+    /** @type {number} */
     hours;
+    /** @type {number} */
     mins;
+    /** @type {number} */
     secs;
+    /** @type {number} */
     millis;
 
+    /**
+     * @param {number} days
+     * @param {number} hours
+     * @param {number} mins
+     * @param {number} secs
+     * @param {number} millis
+     */
     constructor(days, hours, mins, secs, millis) {
         this.days = days;
         this.hours = hours;
@@ -25,6 +37,7 @@ class Time {
         this.millis = millis;
     }
 
+    /** @param {number} datetime_millis */
     static fromMillis(datetime_millis) {
         const days = Math.floor(datetime_millis / (1000 * 60 * 60 * 24));
         const hours = Math.floor((datetime_millis / (1000 * 60 * 60)) % 24);
@@ -37,42 +50,115 @@ class Time {
 }
 
 class Countdown extends EventTarget {
+    /** @type {number} */
     #datetime_target;
+    /** @type {number} */
     #datetime_now;
+    /** @type {number} */
     #datetime_diff;
-    #diff_time_units;
+    /** @type {TimeUnits} */
+    diff_time_units;
+    /** @type {number | null} */
     interval_id;
 
+    /** @param {number} datetime_target */
     constructor(datetime_target) {
-        this.#datetime_target = Number(datetime_target);
+        super();
+        this.#datetime_target = datetime_target;
         this.#datetime_now = Date.now();
         this.#datetime_diff = this.#datetime_target - this.#datetime_now;
-        this.#diff_time_units = Time.fromMillis(this.#datetime_diff);
+        this.diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
         this.interval_id = null;
     }
 
+    /** @param {number} days */
+    #emitUpdateDays(days) {
+        this.dispatchEvent(new CustomEvent("days", { detail: { days: days } }));
+    }
+
+    /** @param {number} hours */
+    #emitUpdateHours(hours) {
+        this.dispatchEvent(new CustomEvent("hours", { detail: { hours: hours } }));
+    }
+
+    /** @param {number} mins */
+    #emitUpdateMins(mins) {
+        this.dispatchEvent(new CustomEvent("mins", { detail: { mins: mins } }));
+    }
+
+    /** @param {number} secs */
     #emitUpdateSecs(secs) {
-        this.dispatchEvent(new CustomEvent("updatesecs", { detail: { secs: secs } }));
+        this.dispatchEvent(new CustomEvent("secs", { detail: { secs: secs } }));
     }
 
+    /** @param {number} millis */
     #emitUpdateMillis(millis) {
-        this.dispatchEvent(new CustomEvent("updatemillis", { detail: { millis: millis } }));
+        this.dispatchEvent(new CustomEvent("millis", { detail: { millis: millis } }));
     }
 
-    #_intervalUpdate() {
+    /** @param {number} new_diff_time_units */
+    #innerEmitUpdate(new_diff_time_units) {
+        this.#emitUpdateMillis(new_diff_time_units.millis);
+
+        if (new_diff_time_units.secs != this.diff_time_units.secs) {
+            this.#emitUpdateSecs(new_diff_time_units.secs);
+        }
+        if (new_diff_time_units.mins != this.diff_time_units.mins) {
+            this.#emitUpdateMins(new_diff_time_units.mins)
+        }
+        if (new_diff_time_units.hours != this.diff_time_units.hours) {
+            this.#emitUpdateHours(new_diff_time_units.hours)
+        }
+        if (new_diff_time_units.days != this.diff_time_units.days) {
+            this.#emitUpdateDays(new_diff_time_units.days)
+        }
+
+        this.diff_time_units = new_diff_time_units;
+    }
+
+    #intervalUpdate() {
         this.#datetime_now = Date.now();
         this.#datetime_diff = this.#datetime_target - this.#datetime_now;
+        const new_diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
+        this.#innerEmitUpdate(new_diff_time_units);
     }
 
-    start() {
-        this.interval_id = setInterval(this.#_intervalUpdate.bind(this), 500);
+    /** @param {number} timeout */
+    #innerStartInterval(timeout) {
+        this.#intervalUpdate();
+        this.interval_id = setInterval(this.#intervalUpdate.bind(this), timeout);
     }
 
+    /**
+     * Set interval timeout to new_timeout then immediately updates countdown.
+     * @param {number} new_timeout
+     */
+    setIntervalTimeout(new_timeout) {
+        if (new_timeout === null) {
+            clearInterval(this.interval_id);
+            this.#innerStartInterval(new_timeout);
+        } else {
+            console.error("Invalid new_timeout");
+        }
+    }
+
+    /** @param {number} new_timeout */
+    start(timeout) {
+        this.#emitUpdateSecs(this.diff_time_units.secs);
+        this.#emitUpdateMins(this.diff_time_units.mins);
+        this.#emitUpdateHours(this.diff_time_units.hours);
+        this.#emitUpdateDays(this.diff_time_units.days);
+        this.#innerStartInterval(typeof timeout === "number" ? timeout : 500);
+    }
+
+    /** @param {number} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
         this.#datetime_target = new_datetime_target;
+        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
+        const new_diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
+        this.#innerEmitUpdate(new_diff_time_units);
     }
 }
-
 
 class DisplayState extends EventTarget {
     state;
@@ -81,9 +167,9 @@ class DisplayState extends EventTarget {
 
     /**
      * The state of a display.
-     * @param state an integer representing the state. Usually this is an enum value.
-     * @param num_states the max number of states it has.
-     * @param local_storage_name where to load and save the state.
+     * @param {number} state an integer representing the state. Usually this is an enum value.
+     * @param {number} num_states the max number of states it has.
+     * @param {String} local_storage_name where to load and save the state.
      */
     constructor(state, num_states, local_storage_name) {
         super();
@@ -92,38 +178,162 @@ class DisplayState extends EventTarget {
         this.#local_storage_name = local_storage_name;
     }
 
-    #emitEnterState(state) {
-        this.dispatchEvent(new CustomEvent("enterstate", { detail: { state: state } }));
-    }
-
-    #emitExitState(state) {
-        this.dispatchEvent(new CustomEvent("existate", { detail: { state: state } }));
-    }
-
     #saveState() {
         localStorage.setItem(this.#local_storage_name, String(this.state));
     }
 
     cycleState() {
-        const next_state = (this.state + 1) % this.num_states;
-        this.switchToState(next_state);
+        this.state = (this.state + 1) % this.num_states;
+        this.#saveState();
+    }
+}
+
+class CountdownElem {
+    /** @type {HTMLElement} */
+    days_elem;
+    /** @type {HTMLElement} */
+    hours_elem;
+    /** @type {HTMLElement} */
+    mins_elem;
+    /** @type {HTMLElement} */
+    secs_elem;
+    /** @type {HTMLElement} */
+    millis_elem;
+
+    /**
+     * @param {HTMLElement} days_elem
+     * @param {HTMLElement} hours_elem
+     * @param {HTMLElement} mins_elem
+     * @param {HTMLElement} secs_elem
+     * @param {HTMLElement} millis_elem
+     */
+    constructor(days_elem, hours_elem, mins_elem, secs_elem, millis_elem) {
+        this.days_elem = days_elem;
+        this.hours_elem = hours_elem;
+        this.mins_elem = mins_elem;
+        this.secs_elem = secs_elem;
+        this.millis_elem = millis_elem;
+    }
+}
+
+class CountdownDisplay {
+    /** @type {DisplayState} */
+    #inner_state;
+    /** @type {CountdownElem | null} */
+    #elem;
+    /** @type {Countdown} */
+    #countdown;
+
+    /**
+     * @param {Countdown} countdown
+     * @param {DisplayState} display_state
+     */
+    constructor(countdown, display_state) {
+        if (!countdown instanceof Countdown) {
+            throw new Error(
+                "Constructed CountdownDisplay with countdown of \"" +
+                countdown.constructor.name +
+                "\" instead of expected class of \"Countdown\""
+            );
+        }
+
+        if (!display_state instanceof DisplayState) {
+            throw new Error(
+                "Constructed CountdownDisplay with display_state of \"" +
+                display_state.constructor.name +
+                "\" instead of expected class of \"DisplayState\""
+            );
+        }
+
+        this.#inner_state = display_state;
+        this.#elem = null;
+        this.#countdown = countdown;
     }
 
-    switchToState(state) {
-        if (state >= this.num_states) {
-            console.log("Invalid display state.");
-        } else {
-            this.#emitExitState(this.state);
-            this.state = state;
-            this.#emitEnterState(this.state);
-            this.#saveState();
+    #startCountdown() {
+        this.#countdown.addEventListener("millis", this.#updateMillis.bind(this));
+        this.#countdown.addEventListener("secs", this.#updateSecs.bind(this));
+        this.#countdown.addEventListener("mins", this.#updateMins.bind(this));
+        this.#countdown.addEventListener("hours", this.#updateHours.bind(this));
+        this.#countdown.addEventListener("days", this.#updateDays.bind(this));
+
+        this.#countdown.start(35);
+    }
+
+    /** @param {CustomEvent} event */
+    #updateMillis(event) {
+        this.#elem.millis_elem.textContent = String(event.detail.millis).padStart(3, '0');
+    }
+
+    /** @param {CustomEvent} event */
+    #updateSecs(event) {
+        this.#elem.secs_elem.textContent = String(event.detail.secs).padStart(2, '0');
+    }
+
+    /** @param {CustomEvent} event */
+    #updateMins(event) {
+        this.#elem.mins_elem.textContent = String(event.detail.mins).padStart(2, '0');
+    }
+
+    /** @param {CustomEvent} event */
+    #updateHours(event) {
+        this.#elem.hours_elem.textContent = String(event.detail.hours).padStart(2, '0');
+    }
+
+    /** @param {CustomEvent} event */
+    #updateDays(event) {
+        this.#elem.days_elem.textContent = String(event.detail.days);
+    }
+
+    #updateDisplayDOM() {
+        switch (this.#inner_state.state) {
+            case CountdownState.CompactFull:
+                break;
+
+            case CountdownState.CompactNoMillis:
+                break;
+
+            case CountdownState.Blocky:
+                break;
+
+            default:
+                throw new Error("Invalid state");
         }
     }
+
+    /** @param {number} new_datetime_target */
+    updateDatetimeTarget(new_datetime_target) {
+        this.#countdown.updateDatetimeTarget(new_datetime_target);
+    }
+
+    cycleDisplay() {
+        this.#inner_state.cycleState();
+        this.#updateDisplayDOM();
+        this.#elem = getCountdownElem();
+    }
+
+    start() {
+        this.#updateDisplayDOM();
+        this.#elem = getCountdownElem();
+        this.#startCountdown();
+    }
+}
+
+/** @returns {CountdownElem} */
+function getCountdownElem() {
+    const days_elem = document.getElementById("countdown-days");
+    const hours_elem = document.getElementById("countdown-hours");
+    const mins_elem = document.getElementById("countdown-mins");
+    const secs_elem = document.getElementById("countdown-secs");
+    // Can be null
+    const millis_elem = document.getElementById("countdown-millis");
+
+    return new CountdownElem(days_elem, hours_elem, mins_elem, secs_elem, millis_elem);
 }
 
 const countdown_state = new DisplayState(
     Number(localStorage.getItem("countdown_state")) || CountdownState.CompactFull,
-    3,
+    Object.keys(CountdownState).length,
     "countdown_state"
 )
 
@@ -134,7 +344,6 @@ const datetime_state = new DisplayState(
 )
 let datetime = null;
 let countdown_interval_id = null;
-let original_countdown_elem = null;
 
 const websocket = new WebSocket(`battlebit/websocket`);
 websocket.binaryType = "arraybuffer";
@@ -146,18 +355,16 @@ websocket.addEventListener("open", (_evt) => {
 
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
-    const countdown_elem = document.getElementById("countdown");
-    original_countdown_elem = countdown_elem.cloneNode();
-    original_countdown_elem.textContent = "";
-
-    if (countdown_state.state == CountdownState.Blocky) {
-        setCountdownDisplayToScrollable();
-    }
+    const datetime_elem = document.getElementById("datetime");
+    const countdown_display = new CountdownDisplay(
+        new Countdown(new Date(Number(datetime_elem.textContent)).getTime()),
+        countdown_state
+    );
 
     formatDatetime();
-    startCountdownInterval();
+    countdown_display.start();
 
-    document.getElementById("refresh").addEventListener("click", function() {
+    document.getElementById("refresh").addEventListener("click", () => {
         if (is_websocket_open) {
             // Increment datetime
             websocket.send(new Int8Array(0));
@@ -166,20 +373,21 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
 
     websocket.addEventListener("message", (event) => {
         datetime = new Date(Number(event.data));
-        // updateDatetimeDisplay();
-        // updateCountdownDiffTime();
+        updateDatetimeDisplay();
+        countdown_display.updateDatetimeTarget(datetime.getTime());
     })
 
-    countdown_elem.addEventListener("click", function() {
+    document.getElementById("countdown").addEventListener("click", () => {
         countdown_state.cycleState();
     });
-    document.getElementById("datetime").addEventListener("click", function() {
+
+    document.getElementById("datetime").addEventListener("click", () => {
         datetime_state.cycleState();
         updateDatetimeDisplay();
     });
 });
 
-function setCountdownDisplayToScrollable() {
+function setCountdownDisplayToBlocky() {
     const countdown_elem = document.getElementById("countdown");
 
     const countdown_div = document.createElement("div");
@@ -233,20 +441,6 @@ function setCountdownDisplayToScrollable() {
     });
 }
 
-countdown_state.addEventListener("enterstate", (evt) => {
-    if (evt.detail.state == CountdownState.Blocky) {
-        setCountdownDisplayToScrollable();
-    }
-    changeCountdownInterval();
-    updateCountdownDiffTime();
-})
-
-countdown_state.addEventListener("exit", (state) => {
-    if (state == CountdownState.Blocky) {
-
-    }
-})
-
 let is_document_visible = true;
 
 document.addEventListener("visibilitychange", () => {
@@ -255,26 +449,6 @@ document.addEventListener("visibilitychange", () => {
     //     queryDatetimeAndUpdateDisplays();
     // }
 })
-
-function changeCountdownInterval() {
-    if (countdown_interval_id) {
-        clearInterval(countdown_interval_id)
-        switch (countdown_state.state) {
-            case CountdownState.CompactFull:
-                countdown_interval_id = setInterval(updateCountdownDiffTime, 30)
-                break;
-
-            case CountdownState.CompactNoMillis:
-            case CountdownState.Blocky:
-                countdown_interval_id = setInterval(updateCountdownDiffTime, 500)
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
 
 function updateDatetimeDisplay() {
     const datetime_elem = document.getElementById("datetime");
@@ -315,80 +489,4 @@ function formatDatetime() {
     const datetime_elem = document.getElementById("datetime");
     datetime = new Date(Number(datetime_elem.textContent));
     updateDatetimeDisplay();
-    updateCountdownDiffTime();
-}
-
-// TODO: update only units that are relevant, ie. only seconds per second, minute per minute, etc.
-function updateCountdownDisplay(days, hours, minutes, seconds, millis) {
-    const countdown_elem = document.getElementById("countdown");
-    switch (countdown_state.state) {
-        case CountdownState.CompactFull:
-            countdown_elem.textContent =
-                days + ':' +
-                String(hours).padStart(2, '0') + ':' +
-                String(minutes).padStart(2, '0') + ':' +
-                String(seconds).padStart(2, '0') + '.' +
-                String(millis).padStart(3, '0');
-            break;
-
-        case CountdownState.CompactNoMillis:
-            countdown_elem.textContent =
-                days + ':' +
-                String(hours).padStart(2, '0') + ':' +
-                String(minutes).padStart(2, '0') + ':' +
-                String(seconds).padStart(2, '0')
-            break;
-
-        case CountdownState.Blocky:
-            const days_elem = document.getElementById("countdown-days");
-            const hours_elem = document.getElementById("countdown-hours");
-            const mins_elem = document.getElementById("countdown-mins");
-            const secs_elem = document.getElementById("countdown-secs");
-
-            days_elem.textContent = days;
-            hours_elem.textContent = hours;
-            mins_elem.textContent = minutes;
-            secs_elem.textContent = seconds;
-            break;
-
-        default:
-            break;
-    }
-}
-
-function updateCountdownDiffTime() {
-    const now = new Date(Date.now());
-    const diff_time = datetime.getTime() - now.getTime();
-    if (diff_time > 0) {
-        const diff_millis = Math.floor((diff_time % 1000));
-        const diff_seconds = Math.floor((diff_time / 1000) % 60);
-        const diff_minutes = Math.floor((diff_time / (1000 * 60)) % 60);
-        const diff_hours = Math.floor((diff_time / (1000 * 60 * 60)) % 24);
-        const diff_days = Math.floor(diff_time / (1000 * 60 * 60 * 24));
-
-        updateCountdownDisplay(diff_days, diff_hours, diff_minutes, diff_seconds, diff_millis);
-    } else {
-        updateCountdownDisplay(0, 0, 0, 0, 0);
-    }
-}
-
-function startCountdownInterval() {
-    updateCountdownDiffTime()
-    let timeout;
-    switch (countdown_state.state) {
-        case CountdownState.CompactFull:
-            timeout = 30;
-            break;
-
-        case CountdownState.CompactNoMillis:
-        case CountdownState.Blocky:
-            timeout = 500;
-            break;
-
-        default:
-            break;
-    }
-
-    console.assert(timeout);
-    countdown_interval_id = setInterval(updateCountdownDiffTime, timeout);
 }

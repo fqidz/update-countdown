@@ -58,8 +58,13 @@ html {
 }
 
 #countdown {
+    display: inline;
     font-size: 8em;
     line-height: 0.8em;
+}
+
+#countdown p {
+    display: inline;
 }
 
 #datetime {

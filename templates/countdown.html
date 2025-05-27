@@ -7,8 +7,16 @@
 {% block content %}
 <div class="main-container">
     <div class="display-container">
-        <div class="countdown-container">
-            <p class="font-roboto font-bold main-fg-color" id="countdown">0:00:00:00.000</p>
+        <div id="countdown" class="font-roboto font-bold main-fg-color">
+            <p id="countdown-days">0</p>
+            <p>:</p>
+            <p id="countdown-hours">00</p>
+            <p>:</p>
+            <p id="countdown-mins">00</p>
+            <p>:</p>
+            <p id="countdown-secs">00</p>
+            <p>.</p>
+            <p id="countdown-millis">00</p>
         </div>
         <div class="datetime-container">
             <time class="font-roboto font-normal dim-fg-color" id="datetime">{{ date_time }}</time>
