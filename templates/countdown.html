@@ -7,16 +7,17 @@
 {% block content %}
 <div class="main-container">
     <div class="display-container">
-        <div id="countdown" class="font-roboto font-bold main-fg-color">
+        <div id="countdown" class="font-roboto font-bold main-fg-color inline">
+            <!-- TODO: aria-label for the labels/"separators" -->
             <p id="countdown-days">0</p>
-            <p>:</p>
+            <label id="days-label" for="countdown-days">:</label>
             <p id="countdown-hours">00</p>
-            <p>:</p>
+            <label id="hours-label" for="countdown-hours">:</label>
             <p id="countdown-mins">00</p>
-            <p>:</p>
+            <label id="mins-label" for="countdown-mins">:</label>
             <p id="countdown-secs">00</p>
-            <p>.</p>
-            <p id="countdown-millis">00</p>
+            <label id="secs-label" for="countdown-secs">.</label>
+            <p id="countdown-millis">000</p>
         </div>
         <div class="datetime-container">
             <time class="font-roboto font-normal dim-fg-color" id="datetime">{{ date_time }}</time>

@@ -52,19 +52,32 @@ html {
     font-style: normal;
 }
 
+.inline {
+    display: inline;
+}
+
+.inline * {
+    display: inline;
+}
+
+.blocky {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.05em 0.25em;
+}
+
+.blocky * {
+    justify-self: end;
+}
+
 #countdown,
 #datetime {
     user-select: none;
 }
 
 #countdown {
-    display: inline;
     font-size: 8em;
     line-height: 0.8em;
-}
-
-#countdown p {
-    display: inline;
 }
 
 #datetime {

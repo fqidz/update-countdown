@@ -1,10 +1,4 @@
-use std::{
-    fs,
-    ops::Range,
-    path::PathBuf,
-    sync::Arc,
-    time::Duration,
-};
+use std::{fs, ops::Range, path::PathBuf, sync::Arc, time::Duration};
 
 use askama::Template;
 use axum::{
@@ -197,9 +191,11 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 }
 
 // Increment datetime directly when getting this page, so that the datetime is displayed
-// immediately on the page. Incrementing the datetime with the websocket after the user loads
-// the page causes flickering, because: the previous datetime would first be displayed, then
-// the increment command is sent, then the datetime is incremented and displayed on the page.
+// immediately on the page.
+//
+// Incrementing the datetime with the websocket after the user loads the page causes flickering,
+// because it first displays the previous datetime, increments the datetime through the websocket,
+// then after a few milliseconds it gets replaced by the new datetime.
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let state_cloned = state.clone();
     let mut date_time_write = state_cloned.date_times.write().await;
