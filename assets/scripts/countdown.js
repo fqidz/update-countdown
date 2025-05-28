@@ -515,20 +515,53 @@ const datetime_state = new DisplayState(
     3,
     "datetime_state"
 )
+
+/** @type {Date | null} */
 let datetime = null;
 
-const websocket = new WebSocket(`battlebit/websocket`);
-websocket.binaryType = "arraybuffer";
-
+/** @type {WebSocket | null} */
+let websocket = null;
 let is_websocket_open = false;
+let is_document_visible = true;
+
+function connectWebsocket() {
+    websocket = new WebSocket(`battlebit/websocket`);
+    websocket.binaryType = "arraybuffer";
+    websocket.addEventListener("message", onWebsocketMessage);
+    is_websocket_open = true;
+}
+
+function disconnectWebsocket() {
+    if (websocket === null) {
+        throw new Error("Tried closing websocket but is null");
+    }
+    is_websocket_open = false;
+    websocket.removeEventListener("message", onWebsocketMessage);
+    websocket.close();
+    websocket = null;
+}
+
+connectWebsocket();
+document.addEventListener("visibilitychange", () => {
+    is_document_visible = !document.hidden;
+    if (is_document_visible === true) {
+        connectWebsocket();
+    } else if (is_document_visible === false) {
+        disconnectWebsocket();
+    }
+})
+
+
 websocket.addEventListener("open", (_evt) => {
     is_websocket_open = true;
 })
 
+/** @type {CountdownDisplay | null} */
+let countdown_display = null;
 
 document.addEventListener("DOMContentLoaded", function(_evt) {
     const datetime_elem = document.getElementById("datetime");
-    const countdown_display = new CountdownDisplay(
+    countdown_display = new CountdownDisplay(
         new Countdown(new Date(Number(datetime_elem.textContent)).getTime()),
         countdown_state
     );
@@ -543,12 +576,6 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
         }
     });
 
-    websocket.addEventListener("message", (event) => {
-        datetime = new Date(Number(event.data));
-        updateDatetimeDisplay();
-        countdown_display.updateDatetimeTarget(datetime.getTime());
-    })
-
     document.getElementById("countdown").addEventListener("click", () => {
         countdown_display.cycleState();
     });
@@ -559,14 +586,14 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
     });
 });
 
-let is_document_visible = true;
+function onWebsocketMessage(event) {
+    if (datetime !== null && countdown_display !== null) {
+        datetime = new Date(Number(event.data));
+        updateDatetimeDisplay();
+        countdown_display.updateDatetimeTarget(datetime.getTime());
+    }
+}
 
-document.addEventListener("visibilitychange", () => {
-    is_document_visible = !document.hidden;
-    // if (is_document_visible === true) {
-    //     queryDatetimeAndUpdateDisplays();
-    // }
-})
 
 function updateDatetimeDisplay() {
     const datetime_elem = document.getElementById("datetime");
