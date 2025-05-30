@@ -605,11 +605,13 @@ let is_document_visible = true;
 /** @type {WebSocket | null} */
 let websocket = connectWebsocket();
 
+/** @returns {WebSocket} */
 function connectWebsocket() {
     const websocket = new WebSocket("battlebit/websocket");
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", onWebsocketMessage);
     is_websocket_open = true;
+
     return websocket;
 }
 
@@ -628,7 +630,7 @@ function disconnectWebsocket() {
 document.addEventListener("visibilitychange", () => {
     is_document_visible = !document.hidden;
     if (is_document_visible === true) {
-        connectWebsocket();
+        websocket = connectWebsocket();
     } else if (is_document_visible === false) {
         disconnectWebsocket();
     }
