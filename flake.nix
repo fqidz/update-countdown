@@ -25,6 +25,7 @@
         pkgs.upx
         pkgs.oha
         pkgs.biome
+        pkgs.pnpm
       ];
 
       buildInputs = [
