@@ -1,3 +1,7 @@
+:root {
+    --display-font-size: 10vw;
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
         --main-bg-color: 23, 23, 27;
@@ -33,10 +37,6 @@ html {
     background-color: rgb(var(--main-bg-color));
 }
 
-.body {
-    font-size: 100%;
-}
-
 .font-roboto {
     font-family: "Roboto Mono", monospace;
     font-optical-sizing: auto;
@@ -63,11 +63,37 @@ html {
 .blocky {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 0.05em 0.25em;
 }
 
-.blocky * {
+.blocky>* {
     justify-self: end;
+}
+
+.main-container {
+    display: flex;
+    height: 100vh;
+    height: 100svh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* .main-container>* { */
+/*     border: 1px solid #f00; */
+/* } */
+
+.display-container {
+    align-self: center;
+    max-width: 80%;
+    max-height: 60%;
+    display: grid;
+    row-gap: 3vw;
+}
+
+.display-container>* {
+    width: fit-content;
+    align-self: center;
+    justify-self: center;
 }
 
 #countdown,
@@ -76,31 +102,11 @@ html {
 }
 
 #countdown {
-    font-size: 8em;
     line-height: 0.8em;
 }
 
 #datetime {
-    font-size: 1.25em;
-}
-
-.main-container {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.main-container>* {
-    position: absolute;
-}
-
-.display-container {
-    align-self: center;
-    display: grid;
-    row-gap: 2em;
+    line-height: 0.2em;
 }
 
 .button-refresh-container {

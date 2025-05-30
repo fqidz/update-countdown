@@ -194,43 +194,43 @@ class DisplayState extends EventTarget {
 }
 
 class CountdownElem {
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     countdown_elem
 
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     days_elem;
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     days_label;
 
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     hours_elem;
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     hours_label;
 
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     mins_elem;
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     mins_label;
 
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     secs_elem;
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     secs_label;
 
-    /** @type {HTMLElement} */
+    /** @type {HTMLElement | null} */
     millis_elem;
 
     /**
-     * @param {HTMLElement} countdown_elem
-     * @param {HTMLElement} days_elem
-     * @param {HTMLElement} days_label
-     * @param {HTMLElement} hours_elem
-     * @param {HTMLElement} hours_label
-     * @param {HTMLElement} mins_elem
-     * @param {HTMLElement} mins_label
-     * @param {HTMLElement} secs_elem
-     * @param {HTMLElement} secs_label
-     * @param {HTMLElement} millis_elem
+     * @param {HTMLElement | null} countdown_elem
+     * @param {HTMLElement | null} days_elem
+     * @param {HTMLElement | null} days_label
+     * @param {HTMLElement | null} hours_elem
+     * @param {HTMLElement | null} hours_label
+     * @param {HTMLElement | null} mins_elem
+     * @param {HTMLElement | null} mins_label
+     * @param {HTMLElement | null} secs_elem
+     * @param {HTMLElement | null} secs_label
+     * @param {HTMLElement | null} millis_elem
      */
     constructor(
         countdown_elem,
@@ -390,7 +390,7 @@ class CountdownDisplay {
                 this.#elem.days_label.textContent = ":";
                 this.#elem.hours_label.textContent = ":";
                 this.#elem.mins_label.textContent = ":";
-                this.#elem.secs_label.textContent = ":";
+                this.#elem.secs_label.textContent = ".";
 
                 if (this.#elem.secs_label === null) {
                     const secs_label = document.createElement("label");
@@ -409,7 +409,7 @@ class CountdownDisplay {
                     this.#elem.millis_elem = millis_elem;
                 }
 
-                this.#countdown.setIntervalTimeout(35);
+                this.#countdown.setIntervalTimeout(51);
                 break;
 
             case CountdownState.CompactNoMillis:
@@ -458,6 +458,60 @@ class CountdownDisplay {
         }
     }
 
+    /**
+     * TODO: update font size when text length changes, e.g. 'days' goes from
+     * 999 to 1000
+     * This only works because we're using a mono-spaced font.
+     * */
+    #updateFontSize() {
+        // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
+        const font_size_to_width_ratio = 5 / 3;
+        const font_size_to_height_ratio = 5 / 4;
+
+        let text_len = null;
+        let text_num_lines = null;
+
+        switch (this.#inner_state.state) {
+            case CountdownState.CompactFull:
+            case CountdownState.CompactNoMillis:
+                text_len = String(this.#elem.countdown_elem.textContent).length;
+                text_num_lines = 1;
+                break;
+
+            case CountdownState.Blocky:
+                text_len = Math.max(
+                    String(this.#elem.days_elem.textContent).length,
+                    String(this.#elem.hours_elem.textContent).length,
+                    String(this.#elem.mins_elem.textContent).length,
+                    String(this.#elem.secs_elem.textContent).length,
+                ) + 1;
+                text_num_lines = 4;
+                break;
+
+            default:
+                throw new Error("Invalid state");
+        }
+
+        /** @type {HTMLElement} */
+        const parent_node = this.#elem.countdown_elem.parentNode;
+
+        // use `window.getComputedStyle()` because `parent_node.clientWidth` and
+        // `parent_node.offsetWidth` isn't accurate.
+        const parent_div_vw = parseFloat(window.getComputedStyle(parent_node).maxWidth);
+        const parent_div_vh = parseFloat(window.getComputedStyle(parent_node).maxHeight);
+
+
+        const font_size_vw = String(
+            font_size_to_width_ratio * parent_div_vw / text_len
+        ) + "vw";
+        const font_size_vh = String(
+            font_size_to_height_ratio * parent_div_vh / text_num_lines
+        ) + "vh";
+
+        this.#elem.countdown_elem.style.fontSize =
+            `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
+    }
+
     /** @param {number} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
         this.#countdown.updateDatetimeTarget(new_datetime_target);
@@ -467,12 +521,14 @@ class CountdownDisplay {
         this.#inner_state.cycleState();
         this.#updateDisplayDOM();
         this.#countdown.updateAll();
+        this.#updateFontSize();
     }
 
     start() {
         this.#elem = getCountdownElem();
         this.#updateDisplayDOM();
         this.#startCountdown();
+        this.#updateFontSize();
     }
 }
 
@@ -542,6 +598,8 @@ function disconnectWebsocket() {
 }
 
 connectWebsocket();
+// Disconnect websocket when webpage is not visible, to save on server
+// resources.
 document.addEventListener("visibilitychange", () => {
     is_document_visible = !document.hidden;
     if (is_document_visible === true) {
@@ -550,7 +608,6 @@ document.addEventListener("visibilitychange", () => {
         disconnectWebsocket();
     }
 })
-
 
 websocket.addEventListener("open", (_evt) => {
     is_websocket_open = true;
