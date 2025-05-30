@@ -24,6 +24,7 @@
         pkgs.chromium
         pkgs.upx
         pkgs.oha
+        pkgs.biome
       ];
 
       buildInputs = [
