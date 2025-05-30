@@ -1,17 +1,11 @@
 :root {
-    --display-font-size: 10vw;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
+    @media (prefers-color-scheme: dark) {
         --main-bg-color: 23, 23, 27;
         --main-fg-color: 237, 236, 255;
         --dim-fg-color: 125, 124, 143;
     }
-}
 
-@media (prefers-color-scheme: light) {
-    :root {
+    @media (prefers-color-scheme: light) {
         --main-bg-color: 245, 245, 250;
         --main-fg-color: 10, 10, 15;
         --dim-fg-color: 118, 118, 123;
@@ -84,6 +78,7 @@ html {
 
 .display-container {
     align-self: center;
+    margin: auto;
     max-width: 80%;
     max-height: 60%;
     display: grid;
@@ -110,9 +105,11 @@ html {
 }
 
 .button-refresh-container {
-    position: fixed;
+    /* position: fixed; */
+    /* margin-top: auto; */
     display: flex;
     width: 100%;
+    align-self: flex-end;
     justify-content: center;
     align-items: center;
     bottom: 0;

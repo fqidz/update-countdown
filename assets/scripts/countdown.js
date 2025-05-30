@@ -585,14 +585,27 @@ function getCountdownElem() {
 }
 
 const countdown_state = new DisplayState(
-    Number(localStorage.getItem("countdown_state")) || CountdownState.CompactFull,
+    (() => {
+        const state = localStorage.getItem("countdown_state");
+        if (state !== null) {
+            return Number(state);
+        } else {
+            // Default to `CountdownState.Blocky` for phones, and
+            // `CountdownState.CompactFull` for anything else.
+            if (matchMedia("(max-width: 600px)").matches) {
+                return CountdownState.Blocky;
+            } else {
+                return CountdownState.CompactFull;
+            }
+        }
+    })(),
     Object.keys(CountdownState).length,
     "countdown_state",
 );
 
 const datetime_state = new DisplayState(
     Number(localStorage.getItem("datetime_state")) || DatetimeState.Utc,
-    3,
+    Object.keys(DatetimeState).length,
     "datetime_state",
 );
 
