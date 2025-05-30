@@ -1,132 +1,127 @@
 const CountdownState = Object.freeze({
-    "CompactFull": 0,
-    "CompactNoMillis": 1,
-    "Blocky": 2,
+    CompactFull: 0,
+    CompactNoMillis: 1,
+    Blocky: 2,
 })
 
 const DatetimeState = Object.freeze({
-    "Utc": 0,
-    "Iso8601": 1,
-    "LocalTimezone": 2,
+    Utc: 0,
+    Iso8601: 1,
+    LocalTimezone: 2,
 })
 
-class TimeUnits {
-    /** @type {number} */
-    days;
-    /** @type {number} */
-    hours;
-    /** @type {number} */
-    mins;
-    /** @type {number} */
-    secs;
-    /** @type {number} */
-    millis;
+// TODO: figure out how to use the dayjs 'index.d.ts' file to work with ts_ls
+// to get autocompletion
 
-    /**
-     * @param {number} days
-     * @param {number} hours
-     * @param {number} mins
-     * @param {number} secs
-     * @param {number} millis
-     */
-    constructor(days, hours, mins, secs, millis) {
-        this.days = days;
-        this.hours = hours;
-        this.mins = mins;
-        this.secs = secs;
-        this.millis = millis;
-    }
+/**
+ * day.js Duration object
+ * @typedef {{
+ *     years: number,
+ *     months: number,
+ *     total_days: number,
+ *     hours: number,
+ *     minutes: number,
+ *     seconds: number,
+ *     milliseconds: number
+ * }} Duration
+ */
 
-    /** @param {number} datetime_millis */
-    static fromMillis(datetime_millis) {
-        const days = Math.floor(datetime_millis / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((datetime_millis / (1000 * 60 * 60)) % 24);
-        const mins = Math.floor((datetime_millis / (1000 * 60)) % 60);
-        const secs = Math.floor((datetime_millis / 1000) % 60);
-        const millis = Math.floor((datetime_millis % 1000));
-
-        return new this(days, hours, mins, secs, millis);
+/** @returns {Duration} */
+function getDiffDuration(now_datetime, target_datetime) {
+    const duration = dayjs.duration(target_datetime.diff(now_datetime));
+    return {
+        years: duration.years(),
+        months: duration.months(),
+        total_days: Math.floor(Number(duration.asDays())),
+        days: duration.days(),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+        milliseconds: duration.milliseconds(),
     }
 }
 
 class Countdown extends EventTarget {
-    /** @type {number} */
+    /** @type {Object} */
     #datetime_target;
     /** @type {number} */
     #datetime_now;
-    /** @type {number} */
-    #datetime_diff;
-    /** @type {TimeUnits} */
-    diff_time_units;
+    /** @type {Duration} */
+    #diff_duration;
     /** @type {number | null} */
-    interval_id;
+    #interval_id;
 
-    /** @param {number} datetime_target */
+    /** @param {Object} datetime_target */
     constructor(datetime_target) {
         super();
         this.#datetime_target = datetime_target;
-        this.#datetime_now = Date.now();
-        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
-        this.diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
-        this.interval_id = null;
+        this.#datetime_now = dayjs();
+        this.#diff_duration = getDiffDuration(this.#datetime_now, this.#datetime_target);
+        this.#interval_id = null;
     }
 
-    /** @param {number} days */
-    #emitUpdateDays(days) {
-        this.dispatchEvent(new CustomEvent("days", { detail: { days: days } }));
+    #emitUpdateTotalDays(val) {
+        this.dispatchEvent(new CustomEvent("totaldays", { detail: val }));
     }
 
-    /** @param {number} hours */
-    #emitUpdateHours(hours) {
-        this.dispatchEvent(new CustomEvent("hours", { detail: { hours: hours } }));
+    /** @param {number} val */
+    #emitUpdateDays(val) {
+        this.dispatchEvent(new CustomEvent("days", { detail: val }));
     }
 
-    /** @param {number} mins */
-    #emitUpdateMins(mins) {
-        this.dispatchEvent(new CustomEvent("mins", { detail: { mins: mins } }));
+    /** @param {number} val */
+    #emitUpdateHours(val) {
+        this.dispatchEvent(new CustomEvent("hours", { detail: val }));
     }
 
-    /** @param {number} secs */
-    #emitUpdateSecs(secs) {
-        this.dispatchEvent(new CustomEvent("secs", { detail: { secs: secs } }));
+    /** @param {number} val */
+    #emitUpdateMinutes(val) {
+        this.dispatchEvent(new CustomEvent("minutes", { detail: val }));
     }
 
-    /** @param {number} millis */
-    #emitUpdateMillis(millis) {
-        this.dispatchEvent(new CustomEvent("millis", { detail: { millis: millis } }));
+    /** @param {number} val */
+    #emitUpdateSeconds(val) {
+        this.dispatchEvent(new CustomEvent("seconds", { detail: val }));
     }
 
-    /** @param {TimeUnits} new_diff_time_units */
-    #innerEmitUpdate(new_diff_time_units) {
-        this.#emitUpdateMillis(new_diff_time_units.millis);
+    /** @param {number} val */
+    #emitUpdateMilliseconds(val) {
+        this.dispatchEvent(new CustomEvent("milliseconds", { detail: val }));
+    }
 
-        if (new_diff_time_units.secs != this.diff_time_units.secs) {
-            this.#emitUpdateSecs(new_diff_time_units.secs);
+    /** @param {Duration} new_diff_duration */
+    #innerEmitUpdate(new_diff_duration) {
+        this.#emitUpdateMilliseconds(new_diff_duration.milliseconds);
+
+        if (new_diff_duration.seconds != this.#diff_duration.seconds) {
+            this.#emitUpdateSeconds(new_diff_duration.seconds);
         }
-        if (new_diff_time_units.mins != this.diff_time_units.mins) {
-            this.#emitUpdateMins(new_diff_time_units.mins)
+        if (new_diff_duration.minutes != this.#diff_duration.minutes) {
+            this.#emitUpdateMinutes(new_diff_duration.minutes)
         }
-        if (new_diff_time_units.hours != this.diff_time_units.hours) {
-            this.#emitUpdateHours(new_diff_time_units.hours)
+        if (new_diff_duration.hours != this.#diff_duration.hours) {
+            this.#emitUpdateHours(new_diff_duration.hours)
         }
-        if (new_diff_time_units.days != this.diff_time_units.days) {
-            this.#emitUpdateDays(new_diff_time_units.days)
+        if (new_diff_duration.days != this.#diff_duration.days) {
+            this.#emitUpdateDays(new_diff_duration.days)
+        }
+        if (new_diff_duration.total_days != this.#diff_duration.total_days) {
+            this.#emitUpdateTotalDays(new_diff_duration.total_days)
         }
 
-        this.diff_time_units = new_diff_time_units;
+        this.#diff_duration = new_diff_duration;
     }
 
     #intervalUpdate() {
-        this.#datetime_now = Date.now();
-        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
-        const new_diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
-        this.#innerEmitUpdate(new_diff_time_units);
+        this.#datetime_now = dayjs();
+        const new_diff_duration = getDiffDuration(this.#datetime_now, this.#datetime_target);
+        this.#innerEmitUpdate(new_diff_duration);
     }
 
     /** @param {number} timeout */
     #innerStartInterval(timeout) {
         this.#intervalUpdate();
-        this.interval_id = setInterval(this.#intervalUpdate.bind(this), timeout);
+        this.#interval_id = setInterval(this.#intervalUpdate.bind(this), timeout);
     }
 
     /**
@@ -137,31 +132,31 @@ class Countdown extends EventTarget {
         if (new_timeout === null) {
             console.error("Invalid new_timeout");
         } else {
-            clearInterval(this.interval_id);
+            clearInterval(this.#interval_id);
             this.#innerStartInterval(new_timeout);
         }
     }
 
-    updateAll() {
-        this.#emitUpdateMillis(this.diff_time_units.millis);
-        this.#emitUpdateSecs(this.diff_time_units.secs);
-        this.#emitUpdateMins(this.diff_time_units.mins);
-        this.#emitUpdateHours(this.diff_time_units.hours);
-        this.#emitUpdateDays(this.diff_time_units.days);
+    emitAll() {
+        this.#emitUpdateMilliseconds(this.#diff_duration.milliseconds);
+        this.#emitUpdateSeconds(this.#diff_duration.seconds);
+        this.#emitUpdateMinutes(this.#diff_duration.minutes);
+        this.#emitUpdateHours(this.#diff_duration.hours);
+        this.#emitUpdateDays(this.#diff_duration.days);
+        this.#emitUpdateTotalDays(this.#diff_duration.total_days);
     }
 
     /** @param {number} timeout */
     start(timeout) {
-        this.updateAll();
+        this.emitAll();
         this.#innerStartInterval(typeof timeout === "number" ? timeout : 500);
     }
 
-    /** @param {number} new_datetime_target */
+    /** @param {Object} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
         this.#datetime_target = new_datetime_target;
-        this.#datetime_diff = this.#datetime_target - this.#datetime_now;
-        const new_diff_time_units = TimeUnits.fromMillis(this.#datetime_diff);
-        this.#innerEmitUpdate(new_diff_time_units);
+        const new_diff_duration = getDiffDuration(this.#datetime_now, this.#datetime_target);
+        this.#innerEmitUpdate(new_diff_duration);
     }
 }
 
@@ -292,20 +287,21 @@ class CountdownDisplay {
     }
 
     #startCountdown() {
-        this.#countdown.addEventListener("millis", this.#updateMillis.bind(this));
-        this.#countdown.addEventListener("secs", this.#updateSecs.bind(this));
-        this.#countdown.addEventListener("mins", this.#updateMins.bind(this));
+        this.#countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
+        this.#countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
+        this.#countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
         this.#countdown.addEventListener("hours", this.#updateHours.bind(this));
         this.#countdown.addEventListener("days", this.#updateDays.bind(this));
+        this.#countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
 
         this.#countdown.start(35);
     }
 
     /** @param {CustomEvent} event */
-    #updateMillis(event) {
+    #updateMilliseconds(event) {
         switch (this.#inner_state.state) {
             case CountdownState.CompactFull:
-                this.#elem.millis_elem.textContent = String(event.detail.millis).padStart(3, '0');
+                this.#elem.millis_elem.textContent = String(event.detail).padStart(3, '0');
                 break;
 
             case CountdownState.CompactNoMillis:
@@ -318,15 +314,15 @@ class CountdownDisplay {
     }
 
     /** @param {CustomEvent} event */
-    #updateSecs(event) {
+    #updateSeconds(event) {
         switch (this.#inner_state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.secs_elem.textContent = String(event.detail.secs).padStart(2, '0');
+                this.#elem.secs_elem.textContent = String(event.detail).padStart(2, '0');
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.secs_elem.textContent = String(event.detail.secs);
+                this.#elem.secs_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -335,15 +331,15 @@ class CountdownDisplay {
     }
 
     /** @param {CustomEvent} event */
-    #updateMins(event) {
+    #updateMinutes(event) {
         switch (this.#inner_state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.mins_elem.textContent = String(event.detail.mins).padStart(2, '0');
+                this.#elem.mins_elem.textContent = String(event.detail).padStart(2, '0');
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.mins_elem.textContent = String(event.detail.mins);
+                this.#elem.mins_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -356,11 +352,11 @@ class CountdownDisplay {
         switch (this.#inner_state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.hours_elem.textContent = String(event.detail.hours).padStart(2, '0');
+                this.#elem.hours_elem.textContent = String(event.detail).padStart(2, '0');
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.hours_elem.textContent = String(event.detail.hours);
+                this.#elem.hours_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -374,7 +370,20 @@ class CountdownDisplay {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
-                this.#elem.days_elem.textContent = String(event.detail.days);
+                break;
+
+            default:
+                throw new Error("Invalid state");
+        }
+    }
+
+    /** @param {CustomEvent} event */
+    #updateTotalDays(event) {
+        switch (this.#inner_state.state) {
+            case CountdownState.CompactFull:
+            case CountdownState.CompactNoMillis:
+            case CountdownState.Blocky:
+                this.#elem.days_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -512,7 +521,7 @@ class CountdownDisplay {
             `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
     }
 
-    /** @param {number} new_datetime_target */
+    /** @param {Object} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
         this.#countdown.updateDatetimeTarget(new_datetime_target);
     }
@@ -520,7 +529,7 @@ class CountdownDisplay {
     cycleState() {
         this.#inner_state.cycleState();
         this.#updateDisplayDOM();
-        this.#countdown.updateAll();
+        this.#countdown.emitAll();
         this.#updateFontSize();
     }
 
@@ -572,7 +581,7 @@ const datetime_state = new DisplayState(
     "datetime_state"
 )
 
-/** @type {Date | null} */
+/** @type {Object | null} */
 let datetime = null;
 
 /** @type {WebSocket | null} */
@@ -619,7 +628,7 @@ let countdown_display = null;
 document.addEventListener("DOMContentLoaded", function(_evt) {
     const datetime_elem = document.getElementById("datetime");
     countdown_display = new CountdownDisplay(
-        new Countdown(new Date(Number(datetime_elem.textContent)).getTime()),
+        new Countdown(dayjs(Number(datetime_elem.textContent))),
         countdown_state
     );
 
@@ -646,9 +655,9 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
     if (datetime !== null && countdown_display !== null) {
-        datetime = new Date(Number(event.data));
+        datetime = dayjs(Number(event.data));
         updateDatetimeDisplay();
-        countdown_display.updateDatetimeTarget(datetime.getTime());
+        countdown_display.updateDatetimeTarget(datetime);
     }
 }
 
@@ -657,31 +666,15 @@ function updateDatetimeDisplay() {
     const datetime_elem = document.getElementById("datetime");
     switch (datetime_state.state) {
         case DatetimeState.Utc:
-            datetime_elem.textContent = datetime.toUTCString();
+            datetime_elem.textContent = datetime.toString();
             break;
         case DatetimeState.Iso8601:
             datetime_elem.textContent = datetime.toISOString();
             break;
         case DatetimeState.LocalTimezone:
-            // Kind of silly, but don't use `Date.toString()` because it
-            // includes timezone name and it might dox people.
-            const date = datetime.toDateString();
-            const date_split = date.split(' ');
-            const week_day = date_split[0];
-            const month_name = date_split[1];
-            const day = date_split[2];
-            const year = date_split[3];
-
-            const time = datetime.toTimeString();
-            const parenthesis_index = time.indexOf('(');
-            const time_without_timezone_name = time.slice(0, parenthesis_index - 1);
-
-            datetime_elem.textContent =
-                week_day + ", " +
-                day + ' ' +
-                month_name + ' ' +
-                year + ' ' +
-                time_without_timezone_name;
+            // // Kind of silly, but don't use `Date.toString()` because it
+            // // includes timezone name and it might dox people.
+            datetime_elem.textContent = datetime.format("ddd, DD MMM YYYY HH:mm:ss [GMT]ZZ");
             break;
         default:
             break;
@@ -690,6 +683,6 @@ function updateDatetimeDisplay() {
 
 function formatDatetime() {
     const datetime_elem = document.getElementById("datetime");
-    datetime = new Date(Number(datetime_elem.textContent));
+    datetime = dayjs(Number(datetime_elem.textContent));
     updateDatetimeDisplay();
 }
