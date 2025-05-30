@@ -96,7 +96,7 @@ class Countdown extends EventTarget {
         this.dispatchEvent(new CustomEvent("millis", { detail: { millis: millis } }));
     }
 
-    /** @param {number} new_diff_time_units */
+    /** @param {TimeUnits} new_diff_time_units */
     #innerEmitUpdate(new_diff_time_units) {
         this.#emitUpdateMillis(new_diff_time_units.millis);
 
@@ -150,7 +150,7 @@ class Countdown extends EventTarget {
         this.#emitUpdateDays(this.diff_time_units.days);
     }
 
-    /** @param {number} new_timeout */
+    /** @param {number} timeout */
     start(timeout) {
         this.updateAll();
         this.#innerStartInterval(typeof timeout === "number" ? timeout : 500);
@@ -270,7 +270,7 @@ class CountdownDisplay {
      * @param {DisplayState} display_state
      */
     constructor(countdown, display_state) {
-        if (!countdown instanceof Countdown) {
+        if (!(countdown instanceof Countdown)) {
             throw new Error(
                 "Constructed CountdownDisplay with countdown of \"" +
                 countdown.constructor.name +
@@ -278,7 +278,7 @@ class CountdownDisplay {
             );
         }
 
-        if (!display_state instanceof DisplayState) {
+        if (!(display_state instanceof DisplayState)) {
             throw new Error(
                 "Constructed CountdownDisplay with display_state of \"" +
                 display_state.constructor.name +
@@ -643,6 +643,7 @@ document.addEventListener("DOMContentLoaded", function(_evt) {
     });
 });
 
+/** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
     if (datetime !== null && countdown_display !== null) {
         datetime = new Date(Number(event.data));
