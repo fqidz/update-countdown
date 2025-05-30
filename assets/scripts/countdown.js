@@ -1,22 +1,6 @@
 // @ts-check
 
-const CountdownState = Object.freeze({
-    CompactFull: 0,
-    CompactNoMillis: 1,
-    Blocky: 2,
-});
-
-const DatetimeState = Object.freeze({
-    Utc: 0,
-    Iso8601: 1,
-    LocalTimezone: 2,
-});
-
-// TODO: figure out how to use the dayjs 'index.d.ts' file to work with ts_ls
-// to get autocompletion
-
 /**
- * day.js Duration object
  * @typedef {{
  *     years: number,
  *     months: number,
@@ -29,9 +13,48 @@ const DatetimeState = Object.freeze({
  * }} Duration
  */
 
+/**
+ * @typedef {{
+ *     countdown_elem: HTMLElement
+ *     days_elem: HTMLElement
+ *     days_label: HTMLElement
+ *     hours_elem: HTMLElement
+ *     hours_label: HTMLElement
+ *     minutes_elem: HTMLElement
+ *     minutes_label: HTMLElement
+ *     seconds_elem: HTMLElement
+ *     seconds_label: HTMLElement | null
+ *     milliseconds_elem: HTMLElement | null
+ * }} CountdownElem
+ */
 
-/** @returns {Duration} */
+/** @import dayjs from 'dayjs' */
+/** @import duration from 'dayjs/plugin/duration' */
+
+// @ts-ignore
+dayjs.extend(window.dayjs_plugin_duration);
+
+const CountdownState = Object.freeze({
+    CompactFull: 0,
+    CompactNoMillis: 1,
+    Blocky: 2,
+});
+
+const DatetimeState = Object.freeze({
+    Utc: 0,
+    Iso8601: 1,
+    LocalTimezone: 2,
+});
+
+
+
+/**
+ * @param {dayjs.Dayjs} now_datetime
+ * @param {dayjs.Dayjs} target_datetime
+ * @returns {Duration}
+ */
 function getDiffDuration(now_datetime, target_datetime) {
+    // @ts-ignore
     const duration = dayjs.duration(target_datetime.diff(now_datetime));
     return {
         years: duration.years(),
@@ -46,9 +69,9 @@ function getDiffDuration(now_datetime, target_datetime) {
 }
 
 class Countdown extends EventTarget {
-    /** @type {Object} */
+    /** @type {dayjs.Dayjs} */
     #datetime_target;
-    /** @type {number} */
+    /** @type {dayjs.Dayjs} */
     #datetime_now;
     /** @type {Duration} */
     #diff_duration;
@@ -59,6 +82,7 @@ class Countdown extends EventTarget {
     constructor(datetime_target) {
         super();
         this.#datetime_target = datetime_target;
+        // @ts-ignore
         this.#datetime_now = dayjs();
         this.#diff_duration = getDiffDuration(
             this.#datetime_now,
@@ -121,6 +145,7 @@ class Countdown extends EventTarget {
     }
 
     #intervalUpdate() {
+        // @ts-ignore
         this.#datetime_now = dayjs();
         const new_diff_duration = getDiffDuration(
             this.#datetime_now,
@@ -183,7 +208,7 @@ class DisplayState extends EventTarget {
 
     /**
      * The state of a display.
-     * @param {number} state an integer representing the state. Usually this is an enum value.
+     * @param {number} state an integer representing the state.
      * @param {number} num_states the max number of states it has.
      * @param {String} local_storage_name where to load and save the state.
      */
@@ -203,21 +228,6 @@ class DisplayState extends EventTarget {
         this.#saveState();
     }
 }
-
-/**
- * @typedef {{
- *     countdown_elem: HTMLElement
- *     days_elem: HTMLElement
- *     days_label: HTMLElement
- *     hours_elem: HTMLElement
- *     hours_label: HTMLElement
- *     minutes_elem: HTMLElement
- *     minutes_label: HTMLElement
- *     seconds_elem: HTMLElement
- *     seconds_label: HTMLElement | null
- *     milliseconds_elem: HTMLElement | null
- * }} CountdownElem
- */
 
 class CountdownDisplay {
     /** @type {DisplayState} */
@@ -445,11 +455,10 @@ class CountdownDisplay {
         }
     }
 
-    /**
-     * TODO: update font size when text length changes, e.g. 'days' goes from
-     * 999 to 1000
-     * This only works because we're using a mono-spaced font.
-     * */
+
+    // TODO: update font size when text length changes, e.g. 'days' goes from
+    // 999 to 1000
+    /** This only works because we're using a mono-spaced font. */
     #updateFontSize() {
         // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
         const font_size_to_width_ratio = 5 / 3;
@@ -590,16 +599,18 @@ const datetime_state = new DisplayState(
 /** @type {Object | null} */
 let datetime = null;
 
-/** @type {WebSocket | null} */
-let websocket = null;
 let is_websocket_open = false;
 let is_document_visible = true;
 
+/** @type {WebSocket | null} */
+let websocket = connectWebsocket();
+
 function connectWebsocket() {
-    websocket = new WebSocket("battlebit/websocket");
+    const websocket = new WebSocket("battlebit/websocket");
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", onWebsocketMessage);
     is_websocket_open = true;
+    return websocket;
 }
 
 function disconnectWebsocket() {
@@ -612,7 +623,6 @@ function disconnectWebsocket() {
     websocket = null;
 }
 
-connectWebsocket();
 // Disconnect websocket when webpage is not visible, to save on server
 // resources.
 document.addEventListener("visibilitychange", () => {
@@ -634,6 +644,7 @@ let countdown_display = null;
 document.addEventListener("DOMContentLoaded", (_evt) => {
     const datetime_elem = document.getElementById("datetime");
     countdown_display = new CountdownDisplay(
+        // @ts-ignore
         new Countdown(dayjs(Number(datetime_elem?.textContent))),
         countdown_state,
     );
@@ -661,6 +672,7 @@ document.addEventListener("DOMContentLoaded", (_evt) => {
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
     if (datetime !== null && countdown_display !== null) {
+        // @ts-ignore
         datetime = dayjs(Number(event.data));
         updateDatetimeDisplay();
         countdown_display.updateDatetimeTarget(datetime);
@@ -680,8 +692,6 @@ function updateDatetimeDisplay() {
             datetime_elem.textContent = datetime.toISOString();
             break;
         case DatetimeState.LocalTimezone:
-            // // Kind of silly, but don't use `Date.toString()` because it
-            // // includes timezone name and it might dox people.
             datetime_elem.textContent = datetime.format(
                 "ddd, DD MMM YYYY HH:mm:ss [GMT]ZZ",
             );
@@ -693,6 +703,7 @@ function updateDatetimeDisplay() {
 
 function formatDatetime() {
     const datetime_elem = document.getElementById("datetime");
+    // @ts-ignore
     datetime = dayjs(Number(datetime_elem?.textContent));
     updateDatetimeDisplay();
 }
