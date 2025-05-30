@@ -12,9 +12,9 @@
 
 @media (prefers-color-scheme: light) {
     :root {
-        --main-bg-color: 255, 0, 0;
-        --main-fg-color: 0, 255, 0;
-        --dim-fg-color: 0, 0, 255;
+        --main-bg-color: 245, 245, 250;
+        --main-fg-color: 10, 10, 15;
+        --dim-fg-color: 118, 118, 123;
     }
 }
 

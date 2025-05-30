@@ -28,7 +28,6 @@ const DatetimeState = Object.freeze({
 
 /** @returns {Duration} */
 function getDiffDuration(now_datetime, target_datetime) {
-	console.log("test");
 	const duration = dayjs.duration(target_datetime.diff(now_datetime));
 	return {
 		years: duration.years(),
@@ -312,18 +311,12 @@ class CountdownDisplay {
 	}
 
 	#startCountdown() {
-		this.#countdown.addEventListener(
-			"milliseconds",
-			this.#updateMilliseconds.bind(this),
-		);
+		this.#countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
 		this.#countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
 		this.#countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
 		this.#countdown.addEventListener("hours", this.#updateHours.bind(this));
 		this.#countdown.addEventListener("days", this.#updateDays.bind(this));
-		this.#countdown.addEventListener(
-			"totaldays",
-			this.#updateTotalDays.bind(this),
-		);
+		this.#countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
 
 		this.#countdown.start(this.#getTimeout());
 	}
