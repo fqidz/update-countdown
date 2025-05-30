@@ -28,6 +28,7 @@ const DatetimeState = Object.freeze({
 
 /** @returns {Duration} */
 function getDiffDuration(now_datetime, target_datetime) {
+    console.log("test");
     const duration = dayjs.duration(target_datetime.diff(now_datetime));
     return {
         years: duration.years(),
@@ -49,7 +50,7 @@ class Countdown extends EventTarget {
     /** @type {Duration} */
     #diff_duration;
     /** @type {number | null} */
-    #interval_id;
+    interval_id;
 
     /** @param {Object} datetime_target */
     constructor(datetime_target) {
@@ -57,7 +58,7 @@ class Countdown extends EventTarget {
         this.#datetime_target = datetime_target;
         this.#datetime_now = dayjs();
         this.#diff_duration = getDiffDuration(this.#datetime_now, this.#datetime_target);
-        this.#interval_id = null;
+        this.interval_id = null;
     }
 
     #emitUpdateTotalDays(val) {
@@ -121,7 +122,7 @@ class Countdown extends EventTarget {
     /** @param {number} timeout */
     #innerStartInterval(timeout) {
         this.#intervalUpdate();
-        this.#interval_id = setInterval(this.#intervalUpdate.bind(this), timeout);
+        this.interval_id = setInterval(this.#intervalUpdate.bind(this), timeout);
     }
 
     /**
@@ -132,7 +133,7 @@ class Countdown extends EventTarget {
         if (new_timeout === null) {
             console.error("Invalid new_timeout");
         } else {
-            clearInterval(this.#interval_id);
+            clearInterval(this.interval_id);
             this.#innerStartInterval(new_timeout);
         }
     }
@@ -286,6 +287,21 @@ class CountdownDisplay {
         this.#countdown = countdown;
     }
 
+    /** @returns {number} */
+    #getTimeout() {
+        switch (this.#inner_state.state) {
+            case CountdownState.CompactFull:
+                return 51;
+
+            case CountdownState.CompactNoMillis:
+            case CountdownState.Blocky:
+                return 500;
+
+            default:
+                throw new Error("Invalid state");
+        }
+    }
+
     #startCountdown() {
         this.#countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
         this.#countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
@@ -294,7 +310,7 @@ class CountdownDisplay {
         this.#countdown.addEventListener("days", this.#updateDays.bind(this));
         this.#countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
 
-        this.#countdown.start(35);
+        this.#countdown.start(this.#getTimeout());
     }
 
     /** @param {CustomEvent} event */
@@ -418,7 +434,6 @@ class CountdownDisplay {
                     this.#elem.millis_elem = millis_elem;
                 }
 
-                this.#countdown.setIntervalTimeout(51);
                 break;
 
             case CountdownState.CompactNoMillis:
@@ -433,7 +448,6 @@ class CountdownDisplay {
                     this.#elem.secs_label = null;
                 }
 
-                this.#countdown.setIntervalTimeout(500);
                 break;
 
             case CountdownState.Blocky:
@@ -456,14 +470,14 @@ class CountdownDisplay {
                 this.#elem.mins_label.textContent = "M";
                 this.#elem.secs_label.textContent = "S";
 
-
-                this.#countdown.setIntervalTimeout(500);
-
                 this.#elem.countdown_elem.classList.replace("inline", "blocky");
                 break;
 
             default:
                 throw new Error("Invalid state");
+        }
+        if (this.#countdown.interval_id !== null) {
+            this.#countdown.setIntervalTimeout(this.#getTimeout());
         }
     }
 
