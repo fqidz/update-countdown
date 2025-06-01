@@ -2,15 +2,35 @@
 
 /**
  * @typedef {{
+ *     total_days: number,
  *     years: number,
  *     months: number,
- *     total_days: number,
  *     days: number,
  *     hours: number,
  *     minutes: number,
  *     seconds: number,
- *     milliseconds: number
+ *     milliseconds: number,
  * }} Duration
+ */
+
+/**
+ * @typedef {{
+ *     year: number,
+ *     month: number,
+ *     day: number,
+ *     hour: number,
+ *     minute: number,
+ *     second: number,
+ *     millisecond: number,
+ * }} TimeUnit
+ */
+
+/**
+ * @typedef {{
+ *     year: number,
+ *     month: number,
+ *     day: number,
+ * }} YearMonthDay
  */
 
 /**
@@ -28,12 +48,6 @@
  * }} CountdownElem
  */
 
-// So that autocompletion works
-/** @import dayjs from 'dayjs' */
-/** @import duration from 'dayjs/plugin/duration' */
-
-// @ts-ignore
-dayjs.extend(window.dayjs_plugin_duration);
 
 const CountdownState = Object.freeze({
     CompactFull: 0,
@@ -46,62 +60,6 @@ const DatetimeState = Object.freeze({
     Iso8601: 1,
     LocalTimezone: 2,
 });
-
-/**
- * @param {dayjs.Dayjs} now_datetime
- * @param {dayjs.Dayjs} target_datetime
- * @returns {Duration}
- */
-function getDiffDuration(now_datetime, target_datetime) {
-    // @ts-ignore
-    const duration = dayjs.duration(target_datetime.diff(now_datetime));
-    const hours = duration.hours();
-    const minutes = duration.minutes();
-    const seconds = duration.seconds();
-    const milliseconds = duration.milliseconds();
-    const total_days =  getTotalDays(
-        duration.asMilliseconds(),
-        hours,
-        minutes,
-        seconds,
-        milliseconds
-    );
-    return {
-        years: duration.years(),
-        months: duration.months(),
-        total_days: total_days,
-        days: duration.days(),
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-    };
-}
-
-/**
- * @typedef {{
- *     year: number,
- *     month: number,
- *     day: number,
- *     hour: number,
- *     minute: number,
- *     second: number,
- *     millisecond: number,
- * }} TimeUnit
- */
-
-/**
- * @typedef {{
- *     total_days: number,
- *     years: number,
- *     months: number,
- *     days: number,
- *     hours: number,
- *     minutes: number,
- *     seconds: number,
- *     milliseconds: number,
- * }} DurationTime
- */
 
 /**
  * @param {Date} datetime
@@ -128,6 +86,7 @@ function isLeapYear(year) {
 }
 
 /**
+ * Amount of days in the month. 0-11 from Jan-Dec
  * @param {number} month
  * @param {boolean} isLeapYear
  */
@@ -153,14 +112,6 @@ function daysInMonth(month, isLeapYear) {
 }
 
 /**
- * @typedef {{
- *     year: number,
- *     month: number,
- *     day: number,
- * }} YearMonthDay
- */
-
-/**
  * @param {YearMonthDay} ymd_from
  * @param {YearMonthDay} ymd_to
  * @returns {number}
@@ -170,7 +121,7 @@ function daysBetween(ymd_from, ymd_to) {
 }
 
 /**
- * Got from here https://stackoverflow.com/a/54267749
+ * https://web.archive.org/web/20250601013920/https://stackoverflow.com/questions/54267589/difference-between-two-dates-using-math/54267749#54267749
  * @param {YearMonthDay} ymd
  * @returns {number}
  */
@@ -195,7 +146,7 @@ function ymdToDays(ymd) {
 /**
  * @param {Date} date_from
  * @param {Date} date_to
- * @returns {DurationTime}
+ * @returns {Duration}
  */
 function getDuration(date_from, date_to) {
     const date_from_units = datetimeToUnits(date_from);
@@ -261,118 +212,10 @@ function getDuration(date_from, date_to) {
     }
 }
 
-/**
- * @param {DurationTime} duration
- * @param {DurationTime} durationExpected
- */
-function assertDuration(duration, durationExpected) {
-    let hasError = false;
-    if (duration.total_days !== durationExpected.total_days) {
-        hasError = true;
-        console.log(`Expected year to be '${durationExpected.total_days}'. Got '${duration.total_days}' instead.`);
-    }
-    if (duration.years !== durationExpected.years) {
-        hasError = true;
-        console.log(`Expected year to be '${durationExpected.years}'. Got '${duration.years}' instead.`);
-    }
-    if (duration.months !== durationExpected.months) {
-        hasError = true;
-        console.log(`Expected month to be '${durationExpected.months}'. Got '${duration.months}' instead.`);
-    }
-    if (duration.days !== durationExpected.days) {
-        hasError = true;
-        console.log(`Expected days to be '${durationExpected.days}'. Got '${duration.days}' instead.`);
-    }
-    if (duration.hours !== durationExpected.hours) {
-        hasError = true;
-        console.log(`Expected hours to be '${durationExpected.hours}'. Got '${duration.hours}' instead.`);
-    }
-    if (duration.minutes !== durationExpected.minutes) {
-        hasError = true;
-        console.log(`Expected minutes to be '${durationExpected.minutes}'. Got '${duration.minutes}' instead.`);
-    }
-    if (duration.seconds !== durationExpected.seconds) {
-        hasError = true;
-        console.log(`Expected seconds to be '${durationExpected.seconds}'. Got '${duration.seconds}' instead.`);
-    }
-    if (duration.milliseconds !== durationExpected.milliseconds) {
-        hasError = true;
-        console.log(`Expected milliseconds to be '${durationExpected.milliseconds}'. Got '${duration.milliseconds}' instead.`);
-    }
-
-    if (hasError) {
-        throw new Error("Assertion failed");
-    }
-}
-
-function testDuration() {
-    {
-        const date_from = new Date("2027-01-20T00:00:00Z");
-        const date_to = new Date("2028-08-15T00:00:00Z");
-        const result = getDuration(date_from, date_to);
-        assertDuration(
-            result,
-            {
-                total_days: 573,
-                years: 1,
-                months: 6,
-                days: 26,
-                hours: 0,
-                minutes: 0,
-                seconds: 0,
-                milliseconds: 0,
-            }
-        )
-    }
-    {
-        const date_from = new Date("2027-01-20T12:00:00Z");
-        date_from.setUTCMilliseconds(233);
-        const date_to = new Date("2027-01-22T00:00:00Z");
-        const result = getDuration(date_from, date_to);
-        assertDuration(
-            result,
-            {
-                total_days: 1,
-                years: 0,
-                months: 0,
-                days: 1,
-                hours: 11,
-                minutes: 59,
-                seconds: 59,
-                milliseconds: 767,
-            }
-        )
-    }
-}
-
-testDuration();
-
-
-/**
- * Gets the total days minus the hours, minutes, seconds, milliseconds.
- * @param {number} as_milliseconds
- * @param {number} hours
- * @param {number} minutes
- * @param {number} seconds
- * @param {number} milliseconds
- * @returns {number}
- */
-function getTotalDays(as_milliseconds, hours, minutes, seconds, milliseconds) {
-    return Math.floor((
-        as_milliseconds -
-        // hours * 60 * 60 * 1000
-        (hours * 3_600_000) -
-        // minutes * 60 * 1000
-        (minutes * 60_000) -
-        (seconds * 1_000) -
-        milliseconds
-    ) / 86_400_000);  // total_days_as_milliseconds / 24 * 60 * 60 * 1000
-}
-
 class Countdown extends EventTarget {
-    /** @type {dayjs.Dayjs} */
+    /** @type {Date} */
     #datetime_target;
-    /** @type {dayjs.Dayjs} */
+    /** @type {Date} */
     #datetime_now;
     /** @type {Duration} */
     #diff_duration;
@@ -383,9 +226,8 @@ class Countdown extends EventTarget {
     constructor(datetime_target) {
         super();
         this.#datetime_target = datetime_target;
-        // @ts-ignore
-        this.#datetime_now = dayjs();
-        this.#diff_duration = getDiffDuration(
+        this.#datetime_now = new Date();
+        this.#diff_duration = getDuration(
             this.#datetime_now,
             this.#datetime_target,
         );
@@ -446,9 +288,8 @@ class Countdown extends EventTarget {
     }
 
     #intervalUpdate() {
-        // @ts-ignore
-        this.#datetime_now = dayjs();
-        const new_diff_duration = getDiffDuration(
+        this.#datetime_now = new Date();
+        const new_diff_duration = getDuration(
             this.#datetime_now,
             this.#datetime_target,
         );
@@ -494,7 +335,7 @@ class Countdown extends EventTarget {
     /** @param {Object} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
         this.#datetime_target = new_datetime_target;
-        const new_diff_duration = getDiffDuration(
+        const new_diff_duration = getDuration(
             this.#datetime_now,
             this.#datetime_target,
         );
@@ -970,8 +811,7 @@ let countdown_display = null;
 document.addEventListener("DOMContentLoaded", (_evt) => {
     const datetime_elem = document.getElementById("datetime");
     countdown_display = new CountdownDisplay(
-        // @ts-ignore
-        new Countdown(dayjs(Number(datetime_elem?.textContent))),
+        new Countdown(new Date(Number(datetime_elem?.textContent))),
         countdown_state,
     );
 
@@ -998,8 +838,7 @@ document.addEventListener("DOMContentLoaded", (_evt) => {
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
     if (datetime !== null && countdown_display !== null) {
-        // @ts-ignore
-        datetime = dayjs(Number(event.data));
+        datetime = new Date(Number(event.data));
         updateDatetimeDisplay();
         countdown_display.updateDatetimeTarget(datetime);
     }
@@ -1012,15 +851,31 @@ function updateDatetimeDisplay() {
     }
     switch (datetime_state.state) {
         case DatetimeState.Utc:
-            datetime_elem.textContent = datetime.toString();
+            datetime_elem.textContent = datetime.toUTCString();
             break;
         case DatetimeState.Iso8601:
             datetime_elem.textContent = datetime.toISOString();
             break;
         case DatetimeState.LocalTimezone:
-            datetime_elem.textContent = datetime.format(
-                "ddd, DD MMM YYYY HH:mm:ss [GMT]ZZ",
-            );
+            // Kind of silly, but don't use `Date.toString()` because it
+            // includes timezone name and it might dox people.
+            const date = datetime.toDateString();
+            const date_split = date.split(' ');
+            const week_day = date_split[0];
+            const month_name = date_split[1];
+            const day = date_split[2];
+            const year = date_split[3];
+
+            const time = datetime.toTimeString();
+            const parenthesis_index = time.indexOf('(');
+            const time_without_timezone_name = time.slice(0, parenthesis_index - 1);
+
+            datetime_elem.textContent =
+                week_day + ", " +
+                day + ' ' +
+                month_name + ' ' +
+                year + ' ' +
+                time_without_timezone_name;
             break;
         default:
             break;
@@ -1029,7 +884,6 @@ function updateDatetimeDisplay() {
 
 function formatDatetime() {
     const datetime_elem = document.getElementById("datetime");
-    // @ts-ignore
-    datetime = dayjs(Number(datetime_elem?.textContent));
+    datetime = new Date(Number(datetime_elem?.textContent));
     updateDatetimeDisplay();
 }
