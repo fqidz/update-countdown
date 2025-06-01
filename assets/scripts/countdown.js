@@ -28,6 +28,7 @@
  * }} CountdownElem
  */
 
+// So that autocompletion works
 /** @import dayjs from 'dayjs' */
 /** @import duration from 'dayjs/plugin/duration' */
 
@@ -46,8 +47,6 @@ const DatetimeState = Object.freeze({
     LocalTimezone: 2,
 });
 
-
-
 /**
  * @param {dayjs.Dayjs} now_datetime
  * @param {dayjs.Dayjs} target_datetime
@@ -56,16 +55,318 @@ const DatetimeState = Object.freeze({
 function getDiffDuration(now_datetime, target_datetime) {
     // @ts-ignore
     const duration = dayjs.duration(target_datetime.diff(now_datetime));
+    const hours = duration.hours();
+    const minutes = duration.minutes();
+    const seconds = duration.seconds();
+    const milliseconds = duration.milliseconds();
+    const total_days =  getTotalDays(
+        duration.asMilliseconds(),
+        hours,
+        minutes,
+        seconds,
+        milliseconds
+    );
     return {
         years: duration.years(),
         months: duration.months(),
-        total_days: Math.floor(Number(duration.asDays())),
+        total_days: total_days,
         days: duration.days(),
-        hours: duration.hours(),
-        minutes: duration.minutes(),
-        seconds: duration.seconds(),
-        milliseconds: duration.milliseconds(),
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
     };
+}
+
+/**
+ * @typedef {{
+ *     year: number,
+ *     month: number,
+ *     day: number,
+ *     hour: number,
+ *     minute: number,
+ *     second: number,
+ *     millisecond: number,
+ * }} TimeUnit
+ */
+
+/**
+ * @typedef {{
+ *     total_days: number,
+ *     years: number,
+ *     months: number,
+ *     days: number,
+ *     hours: number,
+ *     minutes: number,
+ *     seconds: number,
+ *     milliseconds: number,
+ * }} DurationTime
+ */
+
+/**
+ * @param {Date} datetime
+ * @returns {TimeUnit}
+ */
+function datetimeToUnits(datetime) {
+    return {
+        year: datetime.getUTCFullYear(),
+        month: datetime.getUTCMonth(),
+        day: datetime.getUTCDate(),
+        hour: datetime.getUTCHours(),
+        minute: datetime.getUTCMinutes(),
+        second: datetime.getUTCSeconds(),
+        millisecond: datetime.getUTCMilliseconds(),
+    };
+}
+
+/**
+ * @param {number} year
+ * @returns {boolean}
+ */
+function isLeapYear(year) {
+    return ((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0);
+}
+
+/**
+ * @param {number} month
+ * @param {boolean} isLeapYear
+ */
+function daysInMonth(month, isLeapYear) {
+    if (month < 0 || month > 12) {
+        throw new Error("`month` should be from 0-11");
+    }
+
+    return [
+        /* Jan */ 31,
+        /* Feb */ isLeapYear === true ? 29 : 28,
+        /* Mar */ 31,
+        /* Apr */ 30,
+        /* May */ 31,
+        /* Jun */ 30,
+        /* Jul */ 31,
+        /* Aug */ 31,
+        /* Sep */ 30,
+        /* Oct */ 31,
+        /* Nov */ 30,
+        /* Dec */ 31
+    ][month];
+}
+
+/**
+ * @typedef {{
+ *     year: number,
+ *     month: number,
+ *     day: number,
+ * }} YearMonthDay
+ */
+
+/**
+ * @param {YearMonthDay} ymd_from
+ * @param {YearMonthDay} ymd_to
+ * @returns {number}
+ */
+function daysBetween(ymd_from, ymd_to) {
+    return ymdToDays(ymd_to) - ymdToDays(ymd_from);
+}
+
+/**
+ * Got from here https://stackoverflow.com/a/54267749
+ * @param {YearMonthDay} ymd
+ * @returns {number}
+ */
+function ymdToDays(ymd) {
+    let y = ymd.year;
+    let m = ymd.month + 1;
+    const d = ymd.day;
+
+    if (m <= 2) {
+        y--;
+        m += 12;
+    }
+
+    return 365 * y +
+        Math.floor(y / 4) -
+        Math.floor(y / 100) +
+        Math.floor(y / 400) +
+        Math.floor((153 * m - 457) / 5) +
+        d - 306;
+}
+
+/**
+ * @param {Date} date_from
+ * @param {Date} date_to
+ * @returns {DurationTime}
+ */
+function getDuration(date_from, date_to) {
+    const date_from_units = datetimeToUnits(date_from);
+    const date_to_units = datetimeToUnits(date_to);
+    let milliseconds = date_to_units.millisecond - date_from_units.millisecond;
+    let seconds = date_to_units.second - date_from_units.second;
+    let minutes = date_to_units.minute - date_from_units.minute;
+    let hours = date_to_units.hour - date_from_units.hour;
+    let days = date_to_units.day - date_from_units.day;
+    let months = date_to_units.month - date_from_units.month;
+    let years = date_to_units.year - date_from_units.year;
+    let total_days = daysBetween(
+        {
+            year: date_from_units.year,
+            month: date_from_units.month,
+            day: date_from_units.day,
+        },
+        {
+            year: date_to_units.year,
+            month: date_to_units.month,
+            day: date_to_units.day,
+        },
+    )
+
+    if (milliseconds < 0) {
+        milliseconds += 1000;
+        seconds--;
+    }
+    if (seconds < 0) {
+        seconds += 60;
+        minutes--;
+    }
+    if (minutes < 0) {
+        minutes += 60;
+        hours--;
+    }
+    if (hours < 0) {
+        hours += 24;
+        total_days--;
+        days--;
+    }
+    if (days < 0) {
+        // equivalent to `month mod 12`, because '%' in js doesn't work with
+        // negative numbers
+        const month_before_date_to = ((date_to_units.month - 1 % 12) + 12) % 12;
+        days += daysInMonth(month_before_date_to, isLeapYear(date_to_units.year));
+        months--;
+    }
+    if (months < 0) {
+        months += 12;
+        years--;
+    }
+
+    return {
+        total_days,
+        years,
+        months,
+        days,
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
+    }
+}
+
+/**
+ * @param {DurationTime} duration
+ * @param {DurationTime} durationExpected
+ */
+function assertDuration(duration, durationExpected) {
+    let hasError = false;
+    if (duration.total_days !== durationExpected.total_days) {
+        hasError = true;
+        console.log(`Expected year to be '${durationExpected.total_days}'. Got '${duration.total_days}' instead.`);
+    }
+    if (duration.years !== durationExpected.years) {
+        hasError = true;
+        console.log(`Expected year to be '${durationExpected.years}'. Got '${duration.years}' instead.`);
+    }
+    if (duration.months !== durationExpected.months) {
+        hasError = true;
+        console.log(`Expected month to be '${durationExpected.months}'. Got '${duration.months}' instead.`);
+    }
+    if (duration.days !== durationExpected.days) {
+        hasError = true;
+        console.log(`Expected days to be '${durationExpected.days}'. Got '${duration.days}' instead.`);
+    }
+    if (duration.hours !== durationExpected.hours) {
+        hasError = true;
+        console.log(`Expected hours to be '${durationExpected.hours}'. Got '${duration.hours}' instead.`);
+    }
+    if (duration.minutes !== durationExpected.minutes) {
+        hasError = true;
+        console.log(`Expected minutes to be '${durationExpected.minutes}'. Got '${duration.minutes}' instead.`);
+    }
+    if (duration.seconds !== durationExpected.seconds) {
+        hasError = true;
+        console.log(`Expected seconds to be '${durationExpected.seconds}'. Got '${duration.seconds}' instead.`);
+    }
+    if (duration.milliseconds !== durationExpected.milliseconds) {
+        hasError = true;
+        console.log(`Expected milliseconds to be '${durationExpected.milliseconds}'. Got '${duration.milliseconds}' instead.`);
+    }
+
+    if (hasError) {
+        throw new Error("Assertion failed");
+    }
+}
+
+function testDuration() {
+    {
+        const date_from = new Date("2027-01-20T00:00:00Z");
+        const date_to = new Date("2028-08-15T00:00:00Z");
+        const result = getDuration(date_from, date_to);
+        assertDuration(
+            result,
+            {
+                total_days: 573,
+                years: 1,
+                months: 6,
+                days: 26,
+                hours: 0,
+                minutes: 0,
+                seconds: 0,
+                milliseconds: 0,
+            }
+        )
+    }
+    {
+        const date_from = new Date("2027-01-20T12:00:00Z");
+        date_from.setUTCMilliseconds(233);
+        const date_to = new Date("2027-01-22T00:00:00Z");
+        const result = getDuration(date_from, date_to);
+        assertDuration(
+            result,
+            {
+                total_days: 1,
+                years: 0,
+                months: 0,
+                days: 1,
+                hours: 11,
+                minutes: 59,
+                seconds: 59,
+                milliseconds: 767,
+            }
+        )
+    }
+}
+
+testDuration();
+
+
+/**
+ * Gets the total days minus the hours, minutes, seconds, milliseconds.
+ * @param {number} as_milliseconds
+ * @param {number} hours
+ * @param {number} minutes
+ * @param {number} seconds
+ * @param {number} milliseconds
+ * @returns {number}
+ */
+function getTotalDays(as_milliseconds, hours, minutes, seconds, milliseconds) {
+    return Math.floor((
+        as_milliseconds -
+        // hours * 60 * 60 * 1000
+        (hours * 3_600_000) -
+        // minutes * 60 * 1000
+        (minutes * 60_000) -
+        (seconds * 1_000) -
+        milliseconds
+    ) / 86_400_000);  // total_days_as_milliseconds / 24 * 60 * 60 * 1000
 }
 
 class Countdown extends EventTarget {
@@ -369,6 +670,7 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateTotalDays(event) {
+        const previous_len = this.#elem.days_elem.textContent?.length;
         switch (this.#inner_state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
@@ -378,6 +680,16 @@ class CountdownDisplay {
 
             default:
                 throw new Error("Invalid state");
+        }
+        const new_len = this.#elem.days_elem.textContent?.length;
+        // TODO: fix this unnecssarily updating when countdown is started
+        // because it goes from 0 days to whatever days;
+        //
+        // Only check days elem for a change in length, because the other elems
+        // have the same length all the time.
+        if (new_len !== previous_len) {
+            console.log("updated fontsize")
+            this.#updateFontSize();
         }
     }
 
@@ -455,14 +767,13 @@ class CountdownDisplay {
         }
     }
 
-
-    // TODO: update font size when text length changes, e.g. 'days' goes from
-    // 999 to 1000
     /** This only works because we're using a mono-spaced font. */
     #updateFontSize() {
         // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
-        const font_size_to_width_ratio = 5 / 3;
-        const font_size_to_height_ratio = 5 / 4;
+        // 5:3 or 5/3
+        const font_size_to_width_ratio = 1.6666666666666666;
+        // 5:4 or 5/4
+        const font_size_to_height_ratio = 1.25;
 
         let text_len = null;
         let text_num_lines = null;
