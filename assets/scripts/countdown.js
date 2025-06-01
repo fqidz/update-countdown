@@ -65,7 +65,7 @@ const DatetimeState = Object.freeze({
  * @param {Date} datetime
  * @returns {TimeUnit}
  */
-function datetimeToUnits(datetime) {
+function dateToUnits(datetime) {
     return {
         year: datetime.getUTCFullYear(),
         month: datetime.getUTCMonth(),
@@ -88,16 +88,16 @@ function isLeapYear(year) {
 /**
  * Amount of days in the month. 0-11 from Jan-Dec
  * @param {number} month
- * @param {boolean} isLeapYear
+ * @param {boolean} is_leap_year
  */
-function daysInMonth(month, isLeapYear) {
+function daysInMonth(month, is_leap_year) {
     if (month < 0 || month > 12) {
         throw new Error("`month` should be from 0-11");
     }
 
     return [
         /* Jan */ 31,
-        /* Feb */ isLeapYear === true ? 29 : 28,
+        /* Feb */ is_leap_year === true ? 29 : 28,
         /* Mar */ 31,
         /* Apr */ 30,
         /* May */ 31,
@@ -149,8 +149,8 @@ function ymdToDays(ymd) {
  * @returns {Duration}
  */
 function getDuration(date_from, date_to) {
-    const date_from_units = datetimeToUnits(date_from);
-    const date_to_units = datetimeToUnits(date_to);
+    const date_from_units = dateToUnits(date_from);
+    const date_to_units = dateToUnits(date_to);
     let milliseconds = date_to_units.millisecond - date_from_units.millisecond;
     let seconds = date_to_units.second - date_from_units.second;
     let minutes = date_to_units.minute - date_from_units.minute;
@@ -529,7 +529,6 @@ class CountdownDisplay {
         // Only check days elem for a change in length, because the other elems
         // have the same length all the time.
         if (new_len !== previous_len) {
-            console.log("updated fontsize")
             this.#updateFontSize();
         }
     }
@@ -878,7 +877,7 @@ function updateDatetimeDisplay() {
                 time_without_timezone_name;
             break;
         default:
-            break;
+            throw new Error("Invalid state");
     }
 }
 
