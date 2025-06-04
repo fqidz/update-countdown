@@ -79,8 +79,8 @@ html {
 .display-container {
     align-self: center;
     margin: auto;
-    max-width: 80%;
-    max-height: 60%;
+    /* width: 80vw; */
+    /* height: 60vh; */
     display: grid;
     row-gap: 3vw;
 }
@@ -91,8 +91,20 @@ html {
     justify-self: center;
 }
 
+.datetime-container {
+    /* width: 40vw; */
+    display: grid;
+    justify-items: center;
+}
+
+.datetime-container>* {
+    width: fit-content;
+    height: fit-content;
+}
+
 #countdown,
 #datetime {
+    white-space: nowrap;
     user-select: none;
 }
 
@@ -100,13 +112,7 @@ html {
     line-height: 0.8em;
 }
 
-#datetime {
-    line-height: 0.2em;
-}
-
 .button-refresh-container {
-    /* position: fixed; */
-    /* margin-top: auto; */
     display: flex;
     width: 100%;
     align-self: flex-end;

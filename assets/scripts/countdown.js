@@ -1,4 +1,5 @@
 // @ts-check
+"use strict";
 
 /**
  * @typedef {{
@@ -48,6 +49,17 @@
  * }} CountdownElem
  */
 
+// With a 5:3 ratio, a font size of 5vw results in character width of 3vw
+// 5:3 or 5/3
+const FONT_SIZE_VW_RATIO = 1.6666666666666666;
+// 5:4 or 5/4
+const FONT_SIZE_VH_RATIO = 1.25;
+
+// Write these down here instead of setting it in css, because
+const COUNTDOWN_VW = 80;
+const COUNTDOWN_VH = 60;
+
+const DATETIME_VW = 40;
 
 const CountdownState = Object.freeze({
     CompactFull: 0,
@@ -372,26 +384,42 @@ class DisplayState extends EventTarget {
 }
 
 class CountdownDisplay {
-    /** @type {DisplayState} */
-    #inner_state;
-    /** @type {CountdownElem} */
-    #elem;
     /** @type {Countdown} */
-    #countdown;
+    countdown;
+    /** @type {DisplayState} */
+    state;
+    /** @type {CountdownElem} */
+    elem;
 
     /**
-     * @param {Countdown} countdown
-     * @param {DisplayState} display_state
+     * @param {Date} datetime
      */
-    constructor(countdown, display_state) {
-        this.#countdown = countdown;
-        this.#inner_state = display_state;
-        this.#elem = getCountdownElem();
+    constructor(datetime) {
+        this.countdown = new Countdown(datetime);
+        this.state = new DisplayState(
+            (() => {
+                const state = localStorage.getItem("countdown_state");
+                if (state !== null) {
+                    return Number(state);
+                } else {
+                    // Default to `CountdownState.Blocky` for phones, and
+                    // `CountdownState.CompactFull` for anything else.
+                    if (matchMedia("(max-width: 600px)").matches) {
+                        return CountdownState.Blocky;
+                    } else {
+                        return CountdownState.CompactFull;
+                    }
+                }
+            })(),
+            Object.keys(CountdownState).length,
+            "countdown_state",
+        );
+        this.elem = getCountdownElem();
     }
 
     /** @returns {number} */
     #getTimeout() {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
                 return 51;
 
@@ -405,22 +433,22 @@ class CountdownDisplay {
     }
 
     #startCountdown() {
-        this.#countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
-        this.#countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
-        this.#countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
-        this.#countdown.addEventListener("hours", this.#updateHours.bind(this));
-        this.#countdown.addEventListener("days", this.#updateDays.bind(this));
-        this.#countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
+        this.countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
+        this.countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
+        this.countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
+        this.countdown.addEventListener("hours", this.#updateHours.bind(this));
+        this.countdown.addEventListener("days", this.#updateDays.bind(this));
+        this.countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
 
-        this.#countdown.start(this.#getTimeout());
+        this.countdown.start(this.#getTimeout());
     }
 
     /** @param {CustomEvent} event */
     #updateMilliseconds(event) {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
-                if (this.#elem.milliseconds_elem !== null) {
-                    this.#elem.milliseconds_elem.textContent = String(event.detail).padStart(
+                if (this.elem.milliseconds_elem !== null) {
+                    this.elem.milliseconds_elem.textContent = String(event.detail).padStart(
                         3,
                         "0",
                     );
@@ -438,17 +466,17 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateSeconds(event) {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.seconds_elem.textContent = String(event.detail).padStart(
+                this.elem.seconds_elem.textContent = String(event.detail).padStart(
                     2,
                     "0",
                 );
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.seconds_elem.textContent = String(event.detail);
+                this.elem.seconds_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -458,17 +486,17 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateMinutes(event) {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.minutes_elem.textContent = String(event.detail).padStart(
+                this.elem.minutes_elem.textContent = String(event.detail).padStart(
                     2,
                     "0",
                 );
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.minutes_elem.textContent = String(event.detail);
+                this.elem.minutes_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -478,17 +506,17 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateHours(event) {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                this.#elem.hours_elem.textContent = String(event.detail).padStart(
+                this.elem.hours_elem.textContent = String(event.detail).padStart(
                     2,
                     "0",
                 );
                 break;
 
             case CountdownState.Blocky:
-                this.#elem.hours_elem.textContent = String(event.detail);
+                this.elem.hours_elem.textContent = String(event.detail);
                 break;
 
             default:
@@ -498,7 +526,7 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateDays(event) {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
@@ -511,18 +539,18 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateTotalDays(event) {
-        const previous_len = this.#elem.days_elem.textContent?.length;
-        switch (this.#inner_state.state) {
+        const previous_len = this.elem.days_elem.textContent?.length;
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
-                this.#elem.days_elem.textContent = String(event.detail);
+                this.elem.days_elem.textContent = String(event.detail);
                 break;
 
             default:
                 throw new Error("Invalid state");
         }
-        const new_len = this.#elem.days_elem.textContent?.length;
+        const new_len = this.elem.days_elem.textContent?.length;
         // TODO: fix this unnecssarily updating when countdown is started
         // because it goes from 0 days to whatever days;
         //
@@ -535,103 +563,97 @@ class CountdownDisplay {
 
     /** TODO: fix this steaming pile of garbage */
     #updateDisplayDOM() {
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
-                if (this.#elem.seconds_label === null) {
+                if (this.elem.seconds_label === null) {
                     const secs_label = document.createElement("label");
                     secs_label.id = "secs-label";
                     secs_label.htmlFor = "countdown-secs";
 
-                    this.#elem.countdown_elem.appendChild(secs_label);
-                    this.#elem.seconds_label = secs_label;
+                    this.elem.countdown_elem.appendChild(secs_label);
+                    this.elem.seconds_label = secs_label;
                 }
 
-                if (this.#elem.milliseconds_elem === null) {
+                if (this.elem.milliseconds_elem === null) {
                     const milliseconds_elem = document.createElement("p");
                     milliseconds_elem.id = "countdown-millis";
 
-                    this.#elem.countdown_elem.appendChild(milliseconds_elem);
-                    this.#elem.milliseconds_elem = milliseconds_elem;
+                    this.elem.countdown_elem.appendChild(milliseconds_elem);
+                    this.elem.milliseconds_elem = milliseconds_elem;
                 }
 
-                this.#elem.days_label.textContent = ":";
-                this.#elem.hours_label.textContent = ":";
-                this.#elem.minutes_label.textContent = ":";
-                this.#elem.seconds_label.textContent = ".";
+                this.elem.days_label.textContent = ":";
+                this.elem.hours_label.textContent = ":";
+                this.elem.minutes_label.textContent = ":";
+                this.elem.seconds_label.textContent = ".";
 
-                this.#elem.countdown_elem.classList.replace("blocky", "inline");
+                this.elem.countdown_elem.classList.replace("blocky", "inline");
                 break;
 
             case CountdownState.CompactNoMillis:
-                if (this.#elem.seconds_label !== null) {
-                    this.#elem.seconds_label.remove();
-                    this.#elem.seconds_label = null;
+                if (this.elem.seconds_label !== null) {
+                    this.elem.seconds_label.remove();
+                    this.elem.seconds_label = null;
                 }
 
-                if (this.#elem.milliseconds_elem !== null) {
-                    this.#elem.milliseconds_elem.remove();
-                    this.#elem.milliseconds_elem = null;
+                if (this.elem.milliseconds_elem !== null) {
+                    this.elem.milliseconds_elem.remove();
+                    this.elem.milliseconds_elem = null;
                 }
 
-                this.#elem.countdown_elem.classList.replace("blocky", "inline");
+                this.elem.countdown_elem.classList.replace("blocky", "inline");
                 break;
 
             case CountdownState.Blocky:
-                if (this.#elem.seconds_label === null) {
+                if (this.elem.seconds_label === null) {
                     const secs_label = document.createElement("label");
                     secs_label.id = "secs-label";
                     secs_label.htmlFor = "countdown-secs";
 
-                    this.#elem.countdown_elem.appendChild(secs_label);
-                    this.#elem.seconds_label = secs_label;
+                    this.elem.countdown_elem.appendChild(secs_label);
+                    this.elem.seconds_label = secs_label;
                 }
 
-                if (this.#elem.milliseconds_elem !== null) {
-                    this.#elem.milliseconds_elem.remove();
-                    this.#elem.milliseconds_elem = null;
+                if (this.elem.milliseconds_elem !== null) {
+                    this.elem.milliseconds_elem.remove();
+                    this.elem.milliseconds_elem = null;
                 }
 
-                this.#elem.days_label.textContent = "D";
-                this.#elem.hours_label.textContent = "H";
-                this.#elem.minutes_label.textContent = "M";
-                this.#elem.seconds_label.textContent = "S";
+                this.elem.days_label.textContent = "D";
+                this.elem.hours_label.textContent = "H";
+                this.elem.minutes_label.textContent = "M";
+                this.elem.seconds_label.textContent = "S";
 
-                this.#elem.countdown_elem.classList.replace("inline", "blocky");
+                this.elem.countdown_elem.classList.replace("inline", "blocky");
                 break;
 
             default:
                 throw new Error("Invalid state");
         }
-        if (this.#countdown.interval_id !== null) {
-            this.#countdown.setIntervalTimeout(this.#getTimeout());
+        if (this.countdown.interval_id !== null) {
+            this.countdown.setIntervalTimeout(this.#getTimeout());
         }
     }
 
     /** This only works because we're using a mono-spaced font. */
     #updateFontSize() {
-        // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
-        // 5:3 or 5/3
-        const font_size_to_width_ratio = 1.6666666666666666;
-        // 5:4 or 5/4
-        const font_size_to_height_ratio = 1.25;
-
         let text_len = null;
         let text_num_lines = null;
 
-        switch (this.#inner_state.state) {
+        switch (this.state.state) {
             case CountdownState.CompactFull:
             case CountdownState.CompactNoMillis:
-                text_len = String(this.#elem.countdown_elem.textContent).length;
+                text_len = String(this.elem.countdown_elem.textContent).length;
                 text_num_lines = 1;
                 break;
 
             case CountdownState.Blocky:
                 text_len =
                     Math.max(
-                        String(this.#elem.days_elem.textContent).length,
-                        String(this.#elem.hours_elem.textContent).length,
-                        String(this.#elem.minutes_elem.textContent).length,
-                        String(this.#elem.seconds_elem.textContent).length,
+                        String(this.elem.days_elem.textContent).length,
+                        String(this.elem.hours_elem.textContent).length,
+                        String(this.elem.minutes_elem.textContent).length,
+                        String(this.elem.seconds_elem.textContent).length,
                     ) + 1;
                 text_num_lines = 4;
                 break;
@@ -640,38 +662,21 @@ class CountdownDisplay {
                 throw new Error("Invalid state");
         }
 
-        const parent_node = this.#elem.countdown_elem.parentNode;
-        if (parent_node === null) {
-            throw new Error("Countdown element has no parent");
-        }
-        if (parent_node.nodeType !== Node.ELEMENT_NODE) {
-            throw new Error("Parent node of countdown element is not an Element");
-        }
+        const font_size_vw = `${String((FONT_SIZE_VW_RATIO * COUNTDOWN_VW) / text_len)}vw`;
+        const font_size_vh = `${String((FONT_SIZE_VH_RATIO * COUNTDOWN_VH) / text_num_lines)}vh`;
 
-        // use `window.getComputedStyle()` because `parent_node.clientWidth` and
-        // `parent_node.offsetWidth` isn't accurate.
-        const parent_div_vw = Number.parseFloat(
-            window.getComputedStyle(/** @type {Element} */(parent_node)).maxWidth,
-        );
-        const parent_div_vh = Number.parseFloat(
-            window.getComputedStyle(/** @type {Element} */(parent_node)).maxHeight,
-        );
-
-        const font_size_vw = `${String((font_size_to_width_ratio * parent_div_vw) / text_len)}vw`;
-        const font_size_vh = `${String((font_size_to_height_ratio * parent_div_vh) / text_num_lines)}vh`;
-
-        this.#elem.countdown_elem.style.fontSize = `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
+        this.elem.countdown_elem.style.fontSize = `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
     }
 
     /** @param {Object} new_datetime_target */
     updateDatetimeTarget(new_datetime_target) {
-        this.#countdown.updateDatetimeTarget(new_datetime_target);
+        this.countdown.updateDatetimeTarget(new_datetime_target);
     }
 
     cycleState() {
-        this.#inner_state.cycleState();
+        this.state.cycleState();
         this.#updateDisplayDOM();
-        this.#countdown.emitAll();
+        this.countdown.emitAll();
         this.#updateFontSize();
     }
 
@@ -735,30 +740,95 @@ function getCountdownElem() {
     };
 }
 
-const countdown_state = new DisplayState(
-    (() => {
-        const state = localStorage.getItem("countdown_state");
-        if (state !== null) {
-            return Number(state);
-        } else {
-            // Default to `CountdownState.Blocky` for phones, and
-            // `CountdownState.CompactFull` for anything else.
-            if (matchMedia("(max-width: 600px)").matches) {
-                return CountdownState.Blocky;
-            } else {
-                return CountdownState.CompactFull;
-            }
-        }
-    })(),
-    Object.keys(CountdownState).length,
-    "countdown_state",
-);
+class DatetimeDisplay {
+    /** @type {Date} */
+    datetime
+    /** @type {DisplayState} */
+    state
+    /** @type {HTMLElement} */
+    elem
 
-const datetime_state = new DisplayState(
-    Number(localStorage.getItem("datetime_state")) || DatetimeState.Utc,
-    Object.keys(DatetimeState).length,
-    "datetime_state",
-);
+    /** @param {Date} datetime */
+    constructor(datetime) {
+        this.datetime = datetime;
+        this.state = new DisplayState(
+            Number(localStorage.getItem("datetime_state")) || DatetimeState.Utc,
+            Object.keys(DatetimeState).length,
+            "datetime_state",
+        );
+
+        const elem = document.getElementById("datetime");
+        if (elem === null) {
+            throw new Error("No element with id=\"datetime\"");
+        }
+        this.elem = elem;
+    }
+
+    init() {
+        this.#updateDisplayDOM();
+        this.#updateFontSize();
+    }
+
+    cycleState() {
+        this.state.cycleState();
+        this.#updateDisplayDOM();
+        this.#updateFontSize();
+    }
+
+    /** @param {Date} new_datetime */
+    updateDatetime(new_datetime) {
+        this.datetime = new_datetime;
+        this.#updateDisplayDOM();
+    }
+
+    #updateDisplayDOM() {
+        switch (this.state.state) {
+            case DatetimeState.Utc:
+                this.elem.textContent = this.datetime.toUTCString();
+                break;
+
+            case DatetimeState.Iso8601:
+                this.elem.textContent = this.datetime.toISOString();
+                break;
+
+            case DatetimeState.LocalTimezone:
+                // Kind of silly, but don't use `Date.toString()` because it
+                // includes timezone name and it might dox people.
+                const date = this.datetime.toDateString();
+                const date_split = date.split(' ');
+                const week_day = date_split[0];
+                const month_name = date_split[1];
+                const day = date_split[2];
+                const year = date_split[3];
+
+                const time = this.datetime.toTimeString();
+                const parenthesis_index = time.indexOf('(');
+                const time_without_timezone_name = time.slice(0, parenthesis_index - 1);
+
+                this.elem.textContent =
+                    week_day + ", " +
+                    day + ' ' +
+                    month_name + ' ' +
+                    year + ' ' +
+                    time_without_timezone_name;
+                break;
+            default:
+                throw new Error("Invalid state");
+        }
+    }
+
+    /** This only works because we're using a mono-spaced font. */
+    #updateFontSize() {
+        let text_len = String(this.elem.textContent).length;
+
+        const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DATETIME_VW) / text_len)}vw`;
+
+        this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 9rem)`;
+    }
+}
+
+// TODO: deal with websocket not connecting or when server is down. maybe add
+// skeleton screen / greeking
 
 /** @type {Object | null} */
 let datetime = null;
@@ -800,21 +870,39 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-websocket.addEventListener("open", (_evt) => {
+websocket.addEventListener("open", (_event) => {
     is_websocket_open = true;
 });
 
 /** @type {CountdownDisplay | null} */
 let countdown_display = null;
 
-document.addEventListener("DOMContentLoaded", (_evt) => {
-    const datetime_elem = document.getElementById("datetime");
-    countdown_display = new CountdownDisplay(
-        new Countdown(new Date(Number(datetime_elem?.textContent))),
-        countdown_state,
-    );
+/** @type {DatetimeDisplay | null} */
+let datetime_display = null;
 
-    formatDatetime();
+/** @param {MessageEvent} event */
+function onWebsocketMessage(event) {
+    if (countdown_display !== null && datetime_display !== null) {
+        datetime = new Date(Number(event.data));
+        datetime_display.updateDatetime(datetime);
+        countdown_display.updateDatetimeTarget(datetime);
+    }
+}
+
+// main
+
+document.addEventListener("DOMContentLoaded", (_event) => {
+    const datetime_elem = document.getElementById("datetime");
+
+    if (datetime_elem === null) {
+        throw new Error("No element with id=\"datetime\"");
+    }
+
+    const datetime = new Date(Number(datetime_elem.textContent));
+    datetime_display = new DatetimeDisplay(datetime)
+    countdown_display = new CountdownDisplay(datetime);
+
+    datetime_display.init();
     countdown_display.start();
 
     document.getElementById("refresh")?.addEventListener("click", () => {
@@ -840,69 +928,15 @@ document.addEventListener("DOMContentLoaded", (_evt) => {
     //     event.preventDefault();
     // })
 
-    datetime_elem?.addEventListener("click", () => {
-        datetime_state.cycleState();
-        updateDatetimeDisplay();
+    datetime_elem.addEventListener("click", () => {
+        datetime_display?.cycleState();
     });
 
-    datetime_elem?.addEventListener("keyup", (event) => {
+    datetime_elem.addEventListener("keyup", (event) => {
         event.preventDefault();
         if (event.key === "Enter") {
-            datetime_state.cycleState();
-            updateDatetimeDisplay();
+            datetime_display?.cycleState();
         }
     })
 });
 
-/** @param {MessageEvent} event */
-function onWebsocketMessage(event) {
-    if (datetime !== null && countdown_display !== null) {
-        datetime = new Date(Number(event.data));
-        updateDatetimeDisplay();
-        countdown_display.updateDatetimeTarget(datetime);
-    }
-}
-
-function updateDatetimeDisplay() {
-    const datetime_elem = document.getElementById("datetime");
-    if (datetime_elem === null) {
-        throw new Error("No element with id=\"datetime\"")
-    }
-    switch (datetime_state.state) {
-        case DatetimeState.Utc:
-            datetime_elem.textContent = datetime.toUTCString();
-            break;
-        case DatetimeState.Iso8601:
-            datetime_elem.textContent = datetime.toISOString();
-            break;
-        case DatetimeState.LocalTimezone:
-            // Kind of silly, but don't use `Date.toString()` because it
-            // includes timezone name and it might dox people.
-            const date = datetime.toDateString();
-            const date_split = date.split(' ');
-            const week_day = date_split[0];
-            const month_name = date_split[1];
-            const day = date_split[2];
-            const year = date_split[3];
-
-            const time = datetime.toTimeString();
-            const parenthesis_index = time.indexOf('(');
-            const time_without_timezone_name = time.slice(0, parenthesis_index - 1);
-
-            datetime_elem.textContent =
-                week_day + ", " +
-                day + ' ' +
-                month_name + ' ' +
-                year + ' ' +
-                time_without_timezone_name;
-            break;
-        default:
-            throw new Error("Invalid state");
-    }
-}
-
-function formatDatetime() {
-    const datetime_elem = document.getElementById("datetime");
-    datetime = new Date(Number(datetime_elem?.textContent));
-    updateDatetimeDisplay();
-}
