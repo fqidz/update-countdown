@@ -118,7 +118,7 @@ html {
     background-color: rgba(var(--main-bg-color), 0.9);
 }
 
-button#refresh {
+button {
     background-color: transparent;
 }
 

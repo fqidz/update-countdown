@@ -824,14 +824,34 @@ document.addEventListener("DOMContentLoaded", (_evt) => {
         }
     });
 
-    document.getElementById("countdown")?.addEventListener("click", () => {
+    const countdown_elem = document.getElementById("countdown");
+    countdown_elem?.addEventListener("click", () => {
         countdown_display?.cycleState();
     });
 
-    document.getElementById("datetime")?.addEventListener("click", () => {
+    // TODO: fix it repeatedly activating when holding down enter
+    countdown_elem?.addEventListener("keyup", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            countdown_display?.cycleState();
+        }
+    })
+    // countdown_elem?.addEventListener("keydown", (event) => {
+    //     event.preventDefault();
+    // })
+
+    datetime_elem?.addEventListener("click", () => {
         datetime_state.cycleState();
         updateDatetimeDisplay();
     });
+
+    datetime_elem?.addEventListener("keyup", (event) => {
+        event.preventDefault();
+        if (event.key === "Enter") {
+            datetime_state.cycleState();
+            updateDatetimeDisplay();
+        }
+    })
 });
 
 /** @param {MessageEvent} event */
