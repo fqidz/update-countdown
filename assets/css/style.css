@@ -128,12 +128,47 @@ button {
     background-color: transparent;
 }
 
-button#refresh>svg {
-    fill: rgb(var(--main-fg-color));
-    transition: transform 150ms;
+/* TODO: check if this works with stylus */
+@media (hover: hover) and (pointer: fine) {
+    button#refresh>svg {
+        fill: rgb(var(--main-fg-color));
+        transition: transform 100ms linear, fill 75ms linear;
+    }
 }
 
 button#refresh:hover>svg {
     fill: #505050;
     transform: rotate(20deg);
+}
+
+@keyframes refresh {
+    0%, 100% {
+        fill: rgb(var(--main-fg-color));
+        transform: rotate(0deg);
+    }
+
+    20%, 80% {
+        fill: #505050;
+        transform: rotate(20deg);
+    }
+}
+
+@keyframes refreshjump {
+    0%, 100% {
+        transform: translateY(0px) rotate(20deg);
+    }
+
+    40%, 60% {
+        transform: translateY(-10px) rotate(20deg);
+    }
+}
+
+svg.animate {
+    animation:
+        200ms linear refresh
+}
+
+svg.animatejump {
+    animation:
+        200ms ease-in-out refreshjump
 }

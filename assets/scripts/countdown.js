@@ -905,10 +905,27 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     datetime_display.init();
     countdown_display.start();
 
-    document.getElementById("refresh")?.addEventListener("click", () => {
+    const refresh_button_elem = document.getElementById("refresh");
+    if (refresh_button_elem === null) {
+        throw new Error("No element with id=\"refresh\"");
+    }
+
+    refresh_button_elem.addEventListener("pointerdown", (event) => {
         if (is_websocket_open) {
             // Increment datetime
             websocket?.send(new Int8Array(0));
+        }
+        let child_svg = refresh_button_elem.children[0];
+        if (event.pointerType === "mouse") {
+            /** @type {HTMLElement} */(child_svg).classList.add("animatejump");
+            setTimeout(() => {
+                /** @type {HTMLElement} */(child_svg).classList.remove("animatejump");
+            }, 200)
+        } else {
+            /** @type {HTMLElement} */(child_svg).classList.add("animate");
+            setTimeout(() => {
+                /** @type {HTMLElement} */(child_svg).classList.remove("animate");
+            }, 200)
         }
     });
 
