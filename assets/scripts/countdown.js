@@ -2,51 +2,54 @@
 "use strict";
 
 /**
- * @typedef {{
- *     total_days: number,
- *     years: number,
- *     months: number,
- *     days: number,
- *     hours: number,
- *     minutes: number,
- *     seconds: number,
- *     milliseconds: number,
- * }} Duration
+ * Duration between two datetimes.
+ *
+ * total_days: years, months, and days combined
+ * @typedef {Object} Duration
+ * @property {number} total_days
+ * @property {number} years
+ * @property {number} months
+ * @property {number} days
+ * @property {number} hours
+ * @property {number} minutes
+ * @property {number} seconds
+ * @property {number} milliseconds
+ */
+
+
+/**
+ * `Date` with only its time units. More convenient for calculating `Duration`
+ * between dates.
+ * @typedef {Object} TimeUnit
+ * @property {number} year
+ * @property {number} month
+ * @property {number} day
+ * @property {number} hour
+ * @property {number} minute
+ * @property {number} second
+ * @property {number} millisecond
  */
 
 /**
- * @typedef {{
- *     year: number,
- *     month: number,
- *     day: number,
- *     hour: number,
- *     minute: number,
- *     second: number,
- *     millisecond: number,
- * }} TimeUnit
+ * `TimeUnit` with only year, month, and day.
+ * @typedef {Object} YearMonthDay
+ * @property {number} year
+ * @property {number} month
+ * @property {number} day
  */
 
 /**
- * @typedef {{
- *     year: number,
- *     month: number,
- *     day: number,
- * }} YearMonthDay
- */
-
-/**
- * @typedef {{
- *     countdown_elem: HTMLElement
- *     days_elem: HTMLElement
- *     days_label: HTMLElement
- *     hours_elem: HTMLElement
- *     hours_label: HTMLElement
- *     minutes_elem: HTMLElement
- *     minutes_label: HTMLElement
- *     seconds_elem: HTMLElement
- *     seconds_label: HTMLElement | null
- *     milliseconds_elem: HTMLElement | null
- * }} CountdownElem
+ * @typedef CountdownElem
+ * @property {HTMLElement} countdown_elem
+ * @property {HTMLElement} days_elem
+ * @property {HTMLElement} days_label
+ * @property {HTMLElement} hours_elem
+ * @property {HTMLElement} hours_label
+ * @property {HTMLElement} minutes_elem
+ * @property {HTMLElement} minutes_label
+ * @property {HTMLElement} seconds_elem
+ * @property {HTMLElement | null} seconds_label
+ * @property {HTMLElement | null} milliseconds_elem
  */
 
 // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
@@ -55,18 +58,21 @@ const FONT_SIZE_VW_RATIO = 1.6666666666666666;
 // 5:4 or 5/4
 const FONT_SIZE_VH_RATIO = 1.25;
 
-// Write these down here instead of setting it in css, because
+// Hardcode these here instead of setting it in css, because it's not accurate
+// when "extracting" it from the css
 const COUNTDOWN_VW = 80;
 const COUNTDOWN_VH = 60;
 
 const DATETIME_VW = 40;
 
+/** Enums for different countdown display states */
 const CountdownState = Object.freeze({
     CompactFull: 0,
     CompactNoMillis: 1,
     Blocky: 2,
 });
 
+/** Enums for different datetime display states */
 const DatetimeState = Object.freeze({
     Utc: 0,
     Iso8601: 1,
@@ -98,7 +104,8 @@ function isLeapYear(year) {
 }
 
 /**
- * Amount of days in the month. 0-11 from Jan-Dec
+ * Amount of days in the month.
+ * 0 -> 11 == Jan -> Dec.
  * @param {number} month
  * @param {boolean} is_leap_year
  */
@@ -124,6 +131,7 @@ function daysInMonth(month, is_leap_year) {
 }
 
 /**
+ * Total days between dates.
  * @param {YearMonthDay} ymd_from
  * @param {YearMonthDay} ymd_to
  * @returns {number}
@@ -133,6 +141,7 @@ function daysBetween(ymd_from, ymd_to) {
 }
 
 /**
+ * Convert year, month, and day into something similar to Julian days
  * https://web.archive.org/web/20250601013920/https://stackoverflow.com/questions/54267589/difference-between-two-dates-using-math/54267749#54267749
  * @param {YearMonthDay} ymd
  * @returns {number}
@@ -156,6 +165,8 @@ function ymdToDays(ymd) {
 }
 
 /**
+ * Get the duration between two dates in total days, years, months, days,
+ * hours, minutes, seconds, and milliseconds
  * @param {Date} date_from
  * @param {Date} date_to
  * @returns {Duration}
@@ -183,6 +194,8 @@ function getDuration(date_from, date_to) {
         },
     )
 
+    // Borrow from the next time unit if the current one is negative.
+    // TODO: I feel like theres a better way to do this.
     if (milliseconds < 0) {
         milliseconds += 1000;
         seconds--;
@@ -224,6 +237,7 @@ function getDuration(date_from, date_to) {
     }
 }
 
+/** Logic for `CountdownDisplay` */
 class Countdown extends EventTarget {
     /** @type {Date} */
     #datetime_target;
@@ -764,23 +778,6 @@ class DatetimeDisplay {
         this.elem = elem;
     }
 
-    init() {
-        this.#updateDisplayDOM();
-        this.#updateFontSize();
-    }
-
-    cycleState() {
-        this.state.cycleState();
-        this.#updateDisplayDOM();
-        this.#updateFontSize();
-    }
-
-    /** @param {Date} new_datetime */
-    updateDatetime(new_datetime) {
-        this.datetime = new_datetime;
-        this.#updateDisplayDOM();
-    }
-
     #updateDisplayDOM() {
         switch (this.state.state) {
             case DatetimeState.Utc:
@@ -824,6 +821,23 @@ class DatetimeDisplay {
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DATETIME_VW) / text_len)}vw`;
 
         this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 9rem)`;
+    }
+
+    /** @param {Date} new_datetime */
+    updateDatetime(new_datetime) {
+        this.datetime = new_datetime;
+        this.#updateDisplayDOM();
+    }
+
+    cycleState() {
+        this.state.cycleState();
+        this.#updateDisplayDOM();
+        this.#updateFontSize();
+    }
+
+    init() {
+        this.#updateDisplayDOM();
+        this.#updateFontSize();
     }
 }
 
@@ -874,23 +888,20 @@ websocket.addEventListener("open", (_event) => {
     is_websocket_open = true;
 });
 
-/** @type {CountdownDisplay | null} */
-let countdown_display = null;
-
-/** @type {DatetimeDisplay | null} */
-let datetime_display = null;
-
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
-    if (countdown_display !== null && datetime_display !== null) {
-        datetime = new Date(Number(event.data));
-        datetime_display.updateDatetime(datetime);
-        countdown_display.updateDatetimeTarget(datetime);
-    }
+    datetime = new Date(Number(event.data));
+    datetime_display.updateDatetime(datetime);
+    countdown_display.updateDatetimeTarget(datetime);
 }
 
-// main
+/** @type {CountdownDisplay} */
+let countdown_display;
 
+/** @type {DatetimeDisplay} */
+let datetime_display;
+
+// main
 document.addEventListener("DOMContentLoaded", (_event) => {
     const datetime_elem = document.getElementById("datetime");
 
@@ -931,14 +942,14 @@ document.addEventListener("DOMContentLoaded", (_event) => {
 
     const countdown_elem = document.getElementById("countdown");
     countdown_elem?.addEventListener("click", () => {
-        countdown_display?.cycleState();
+        countdown_display.cycleState();
     });
 
     // TODO: fix it repeatedly activating when holding down enter
     countdown_elem?.addEventListener("keyup", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            countdown_display?.cycleState();
+            countdown_display.cycleState();
         }
     })
     // countdown_elem?.addEventListener("keydown", (event) => {
@@ -946,13 +957,13 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     // })
 
     datetime_elem.addEventListener("click", () => {
-        datetime_display?.cycleState();
+        datetime_display.cycleState();
     });
 
     datetime_elem.addEventListener("keyup", (event) => {
         event.preventDefault();
         if (event.key === "Enter") {
-            datetime_display?.cycleState();
+            datetime_display.cycleState();
         }
     })
 });
