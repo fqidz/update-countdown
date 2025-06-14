@@ -946,12 +946,12 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     });
 
     // TODO: fix it repeatedly activating when holding down enter
-    countdown_elem?.addEventListener("keyup", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            countdown_display.cycleState();
-        }
-    })
+    // countdown_elem?.addEventListener("keyup", (event) => {
+    //     if (event.key === "Enter") {
+    //         event.preventDefault();
+    //         countdown_display.cycleState();
+    //     }
+    // })
     // countdown_elem?.addEventListener("keydown", (event) => {
     //     event.preventDefault();
     // })
@@ -960,11 +960,11 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         datetime_display.cycleState();
     });
 
-    datetime_elem.addEventListener("keyup", (event) => {
-        event.preventDefault();
-        if (event.key === "Enter") {
-            datetime_display.cycleState();
-        }
-    })
+    // datetime_elem.addEventListener("keyup", (event) => {
+    //     event.preventDefault();
+    //     if (event.key === "Enter") {
+    //         datetime_display.cycleState();
+    //     }
+    // })
 });
 

@@ -29,11 +29,11 @@ use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::Tim
 #[template(path = "countdown.html")]
 struct CountdownTemplate {
     title: String,
-    date_time: i64,
+    datetime: i64,
 }
 
 struct AppState {
-    date_times: RwLock<HashMap<String, DateTime<Utc>>>,
+    datetimes: RwLock<HashMap<String, DateTime<Utc>>>,
     tx: broadcast::Sender<i64>,
 }
 
@@ -51,33 +51,33 @@ impl AppState {
                 if let [month, day, hour, minute, second] =
                     data.map(|v| v.parse::<u32>().unwrap()).collect::<Vec<_>>()[..]
                 {
-                    let date_time: DateTime<Utc> = Utc
+                    let datetime: DateTime<Utc> = Utc
                         .with_ymd_and_hms(year, month, day, hour, minute, second)
                         .unwrap();
-                    return (name.to_string(), date_time);
+                    return (name.to_string(), datetime);
                 } else {
                     panic!("Save cannot be parsed.");
                 }
             })
             .collect::<HashMap<_, _>>();
         Self {
-            date_times: RwLock::new(contents),
+            datetimes: RwLock::new(contents),
             tx,
         }
     }
 
     async fn to_ymd_and_hms(&self) -> String {
-        self.date_times
+        self.datetimes
             .read()
             .await
             .iter()
-            .map(|(name, date_time)| {
-                let year = date_time.year();
-                let month = date_time.month();
-                let day = date_time.day();
-                let hour = date_time.hour();
-                let minute = date_time.minute();
-                let seconds = date_time.second();
+            .map(|(name, datetime)| {
+                let year = datetime.year();
+                let month = datetime.month();
+                let day = datetime.day();
+                let hour = datetime.hour();
+                let minute = datetime.minute();
+                let seconds = datetime.second();
                 format!(
                     "{}\t{}\t{}\t{}\t{}\t{}\t{}",
                     name, year, month, day, hour, minute, seconds
@@ -155,15 +155,15 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
-            // Ignore message and assume it means to increment datetime
+            // Increments datetime no matter the message
             while let Some(Ok(Message::Binary(_msg))) = reciever.next().await {
-                let mut date_time_write = state_cloned.date_times.write().await;
-                let date_time = date_time_write.get_mut("battlebit").unwrap();
+                let mut datetime_write = state_cloned.datetimes.write().await;
+                let datetime = datetime_write.get_mut("battlebit").unwrap();
 
                 let secs = secs_range.sample(&mut rng);
-                *date_time += Duration::from_secs(secs);
+                *datetime += Duration::from_secs(secs);
 
-                tx.send(date_time.timestamp_millis()).unwrap();
+                tx.send(datetime.timestamp_millis()).unwrap();
             }
         }
     });
@@ -198,20 +198,20 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 // then after a few milliseconds it gets replaced by the new datetime.
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let state_cloned = state.clone();
-    let mut date_time_write = state_cloned.date_times.write().await;
-    let date_time = date_time_write.get_mut("battlebit").unwrap();
+    let mut datetime_write = state_cloned.datetimes.write().await;
+    let datetime = datetime_write.get_mut("battlebit").unwrap();
 
     let mut rng = rand::rng();
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
-    *date_time += Duration::from_secs(secs);
+    *datetime += Duration::from_secs(secs);
 
     // Send the new datetime to all clients connected to websocket
     let tx = state.tx.clone();
-    tx.send(date_time.timestamp_millis()).unwrap();
+    tx.send(datetime.timestamp_millis()).unwrap();
 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
-        date_time: date_time.timestamp_millis(),
+        datetime: datetime.timestamp_millis(),
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
@@ -226,14 +226,14 @@ async fn increment_datetime(
     }
 
     let state_cloned = state.clone();
-    let mut date_time_write = state_cloned.date_times.write().await;
-    let date_time = date_time_write.get_mut(&game_name).unwrap();
+    let mut datetime_write = state_cloned.datetimes.write().await;
+    let datetime = datetime_write.get_mut(&game_name).unwrap();
 
     let mut rng = rand::rng();
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
 
-    *date_time += Duration::from_secs(secs);
-    (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()
+    *datetime += Duration::from_secs(secs);
+    (StatusCode::OK, datetime.timestamp_millis().to_string()).into_response()
 }
 
 async fn query_datetime(
@@ -244,10 +244,10 @@ async fn query_datetime(
         return (StatusCode::UNAUTHORIZED).into_response();
     }
     let state_cloned = state.clone();
-    let date_time_read = state_cloned.date_times.read().await;
-    let date_time = date_time_read.get(&game_name).unwrap();
+    let datetime_read = state_cloned.datetimes.read().await;
+    let datetime = datetime_read.get(&game_name).unwrap();
 
-    (StatusCode::OK, date_time.timestamp_millis().to_string()).into_response()
+    (StatusCode::OK, datetime.timestamp_millis().to_string()).into_response()
 }
 
 async fn shutdown_signal() {
