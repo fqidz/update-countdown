@@ -67,7 +67,7 @@ const DATETIME_VW = 40;
 
 /** Enums for different countdown display states */
 const CountdownState = Object.freeze({
-    CompactFull: 0,
+    Compact: 0,
     CompactNoMillis: 1,
     Blocky: 2,
 });
@@ -141,7 +141,7 @@ function daysBetween(ymd_from, ymd_to) {
 }
 
 /**
- * Convert year, month, and day into something similar to Julian days
+ * Convert year, month, and day into something similar to Julian days.
  * https://web.archive.org/web/20250601013920/https://stackoverflow.com/questions/54267589/difference-between-two-dates-using-math/54267749#54267749
  * @param {YearMonthDay} ymd
  * @returns {number}
@@ -237,6 +237,34 @@ function getDuration(date_from, date_to) {
     }
 }
 
+class DisplayState extends EventTarget {
+    /** @type {number} */
+    state;
+    /** @type {number} */
+    num_states;
+    /** @type {String} */
+    #local_storage_name;
+
+    /**
+     * The state of a display.
+     * @param {number} state an integer representing the state.
+     * @param {number} num_states the max number of states it has.
+     * @param {String} local_storage_name where to load and save the state.
+     */
+    constructor(state, num_states, local_storage_name) {
+        super();
+        this.state = state;
+        this.num_states = num_states;
+        this.#local_storage_name = local_storage_name;
+    }
+
+    cycleState() {
+        this.state = (this.state + 1) % this.num_states;
+        localStorage.setItem(this.#local_storage_name, String(this.state));
+    }
+}
+
+
 /** Logic for `CountdownDisplay` */
 class Countdown extends EventTarget {
     /** @type {Date} */
@@ -245,6 +273,8 @@ class Countdown extends EventTarget {
     #datetime_now;
     /** @type {Duration} */
     #diff_duration;
+    /** @type {number} */
+    #timeout;
     /** @type {number | null} */
     interval_id;
 
@@ -340,6 +370,7 @@ class Countdown extends EventTarget {
                 clearInterval(this.interval_id);
             }
             this.#innerStartInterval(new_timeout);
+            this.#timeout = new_timeout;
         }
     }
 
@@ -352,10 +383,24 @@ class Countdown extends EventTarget {
         this.#emitUpdateTotalDays(this.#diff_duration.total_days);
     }
 
+    pause() {
+        if (this.interval_id !== null) {
+            clearInterval(this.interval_id);
+            this.interval_id = null
+        }
+    }
+
+    play() {
+        if (this.interval_id === null) {
+            this.#innerStartInterval(this.#timeout)
+        }
+    }
+
     /** @param {number} timeout */
     start(timeout) {
         this.emitAll();
         this.#innerStartInterval(typeof timeout === "number" ? timeout : 500);
+        this.#timeout = timeout;
     }
 
     /** @param {Object} new_datetime_target */
@@ -366,34 +411,6 @@ class Countdown extends EventTarget {
             this.#datetime_target,
         );
         this.#innerEmitUpdate(new_diff_duration);
-    }
-}
-
-class DisplayState extends EventTarget {
-    state;
-    num_states;
-    #local_storage_name;
-
-    /**
-     * The state of a display.
-     * @param {number} state an integer representing the state.
-     * @param {number} num_states the max number of states it has.
-     * @param {String} local_storage_name where to load and save the state.
-     */
-    constructor(state, num_states, local_storage_name) {
-        super();
-        this.state = state;
-        this.num_states = num_states;
-        this.#local_storage_name = local_storage_name;
-    }
-
-    #saveState() {
-        localStorage.setItem(this.#local_storage_name, String(this.state));
-    }
-
-    cycleState() {
-        this.state = (this.state + 1) % this.num_states;
-        this.#saveState();
     }
 }
 
@@ -421,7 +438,7 @@ class CountdownDisplay {
                     if (matchMedia("(max-width: 600px)").matches) {
                         return CountdownState.Blocky;
                     } else {
-                        return CountdownState.CompactFull;
+                        return CountdownState.Compact;
                     }
                 }
             })(),
@@ -434,7 +451,7 @@ class CountdownDisplay {
     /** @returns {number} */
     #getTimeout() {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
                 return 51;
 
             case CountdownState.CompactNoMillis:
@@ -446,21 +463,10 @@ class CountdownDisplay {
         }
     }
 
-    #startCountdown() {
-        this.countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
-        this.countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
-        this.countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
-        this.countdown.addEventListener("hours", this.#updateHours.bind(this));
-        this.countdown.addEventListener("days", this.#updateDays.bind(this));
-        this.countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
-
-        this.countdown.start(this.#getTimeout());
-    }
-
     /** @param {CustomEvent} event */
     #updateMilliseconds(event) {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
                 if (this.elem.milliseconds_elem !== null) {
                     this.elem.milliseconds_elem.textContent = String(event.detail).padStart(
                         3,
@@ -481,7 +487,7 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateSeconds(event) {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
                 this.elem.seconds_elem.textContent = String(event.detail).padStart(
                     2,
@@ -501,7 +507,7 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateMinutes(event) {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
                 this.elem.minutes_elem.textContent = String(event.detail).padStart(
                     2,
@@ -521,7 +527,7 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateHours(event) {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
                 this.elem.hours_elem.textContent = String(event.detail).padStart(
                     2,
@@ -541,7 +547,7 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateDays(event) {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
                 break;
@@ -555,7 +561,7 @@ class CountdownDisplay {
     #updateTotalDays(event) {
         const previous_len = this.elem.days_elem.textContent?.length;
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
                 this.elem.days_elem.textContent = String(event.detail);
@@ -578,7 +584,7 @@ class CountdownDisplay {
     /** TODO: fix this steaming pile of garbage */
     #updateDisplayDOM() {
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
                 if (this.elem.seconds_label === null) {
                     const secs_label = document.createElement("label");
                     secs_label.id = "secs-label";
@@ -655,7 +661,7 @@ class CountdownDisplay {
         let text_num_lines = null;
 
         switch (this.state.state) {
-            case CountdownState.CompactFull:
+            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
                 text_len = String(this.elem.countdown_elem.textContent).length;
                 text_num_lines = 1;
@@ -694,9 +700,25 @@ class CountdownDisplay {
         this.#updateFontSize();
     }
 
+    pause() {
+        this.countdown.pause();
+    }
+
+    play() {
+        this.countdown.play();
+    }
+
     start() {
         this.#updateDisplayDOM();
-        this.#startCountdown();
+
+        this.countdown.addEventListener("milliseconds", this.#updateMilliseconds.bind(this));
+        this.countdown.addEventListener("seconds", this.#updateSeconds.bind(this));
+        this.countdown.addEventListener("minutes", this.#updateMinutes.bind(this));
+        this.countdown.addEventListener("hours", this.#updateHours.bind(this));
+        this.countdown.addEventListener("days", this.#updateDays.bind(this));
+        this.countdown.addEventListener("totaldays", this.#updateTotalDays.bind(this));
+        this.countdown.start(this.#getTimeout());
+
         this.#updateFontSize();
     }
 }
@@ -779,6 +801,8 @@ class DatetimeDisplay {
     }
 
     #updateDisplayDOM() {
+        // No need to update font size because it only changes length at 10000
+        // years
         switch (this.state.state) {
             case DatetimeState.Utc:
                 this.elem.textContent = this.datetime.toUTCString();
@@ -873,14 +897,16 @@ function disconnectWebsocket() {
     websocket = null;
 }
 
-// Disconnect websocket when webpage is not visible, to save on server
-// resources.
 document.addEventListener("visibilitychange", () => {
+    // When webpage isn't visible, disconnect websocket to save on server
+    // resources and also pause countdown from ticking down.
     is_document_visible = !document.hidden;
     if (is_document_visible === true) {
         websocket = connectWebsocket();
+        countdown_display.play();
     } else if (is_document_visible === false) {
         disconnectWebsocket();
+        countdown_display.pause();
     }
 });
 
@@ -921,11 +947,14 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         throw new Error("No element with id=\"refresh\"");
     }
 
-    refresh_button_elem.addEventListener("pointerdown", (event) => {
+    refresh_button_elem.addEventListener("click", (_event) => {
         if (is_websocket_open) {
             // Increment datetime
             websocket?.send(new Int8Array(0));
         }
+    });
+
+    refresh_button_elem.addEventListener("pointerup", (event) => {
         let child_svg = refresh_button_elem.children[0];
         if (event.pointerType === "mouse") {
             /** @type {HTMLElement} */(child_svg).classList.add("animatejump");
