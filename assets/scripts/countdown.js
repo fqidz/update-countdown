@@ -61,7 +61,7 @@ const FONT_SIZE_VH_RATIO = 1.25;
 // Hardcode these here instead of setting it in css, because it's not accurate
 // when "extracting" it from the css
 const COUNTDOWN_VW = 80;
-const COUNTDOWN_VH = 60;
+const COUNTDOWN_VH = 50;
 
 const DATETIME_VW = 40;
 
