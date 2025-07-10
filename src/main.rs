@@ -188,9 +188,24 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let mut rx = state.tx.subscribe();
 
     let mut send_task = tokio::spawn({
-        let state_cloned = state.clone();
+        // For each user, limit the amount of messages per interval to a specified amount. If the
+        // user has sent more messages than the specified amount, they would still increment the
+        // timestamp but waits until the interval finishes to send the lastest timestamp. The goal
+        // is to prevent users from recieving too many websocket messages, as this would cause tons
+        // of DOM updates (due to the countdown updating each time a message is recieved), which
+        // could possibly crash their browser.
+        //
+        // NOTE: This is not guaranteed that each user will only have this amount of messages
+        // recieved per interval. This means that with a decent amount of users, each user will
+        // recieve much a lot more messages than what the limit specifies.
+        //
+        // TODO: It would be better if, instead, we can control how many messages will be recieved
+        // by each user per interval.
+        let max_messages_per_interval = 10u8;
         let mut interval = interval(Duration::from_millis(500));
         async move {
+            // TODO: would stream merging be a better choice instead of `select!` inside `loop`?
+            // (as recommened by the tokio docs)
             loop {
                 tokio::select! {
                     Ok(timestamp_msg) = rx.recv() => {
@@ -200,29 +215,26 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                             .fetch_add(1, Ordering::Relaxed)
                             .saturating_add(1);
 
-                        last_timestamp_recieved.store(timestamp_msg, Ordering::Relaxed);
-
-                        if num_messages <= 10 {
+                        if num_messages <= max_messages_per_interval {
                             if sender
                                 .send(Message::Text(Utf8Bytes::from(timestamp_msg.to_string())))
                                 .await
                                 .is_err()
                             {
-                                // TODO: also update `state.datetimes`
                                 break;
                             }
+                        } else {
+                            last_timestamp_recieved.store(timestamp_msg, Ordering::Relaxed);
                         }
                     },
                     _ = interval.tick() => {
-                        let datetime_read = state_cloned.datetimes.read().await;
-                        let datetime = datetime_read.get("battlebit").unwrap();
-                        let current_timestamp = datetime.timestamp_millis();
+                        let num_messages = num_recieved_in_interval.fetch_and(0, Ordering::Relaxed);
 
-                        let last_timestamp = last_timestamp_recieved.load(Ordering::Relaxed);
-
-                        if last_timestamp == current_timestamp {
+                        if num_messages <= max_messages_per_interval {
                             continue;
                         }
+
+                        let last_timestamp = last_timestamp_recieved.load(Ordering::Relaxed);
 
                         if sender
                             .send(Message::Text(Utf8Bytes::from(last_timestamp.to_string())))
@@ -231,8 +243,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                         {
                             break;
                         }
-
-                        num_recieved_in_interval.store(0, Ordering::Relaxed)
                     }
                 }
             }
