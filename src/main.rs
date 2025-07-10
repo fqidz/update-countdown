@@ -209,7 +209,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             loop {
                 tokio::select! {
                     Ok(timestamp_msg) = rx.recv() => {
-                        // Fetch, then increment, then also increment fetch'ed value so that it
+                        // Fetch, then increment, then also increment fetched value so that it
                         // matches the incremented value. Basically `add_fetch()`.
                         let num_messages = num_recieved_in_interval
                             .fetch_add(1, Ordering::Relaxed)
@@ -228,16 +228,15 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                         }
                     },
                     _ = interval.tick() => {
-                        let num_messages = num_recieved_in_interval.fetch_and(0, Ordering::Relaxed);
-
-                        if num_messages <= max_messages_per_interval {
+                        if num_recieved_in_interval.fetch_and(0, Ordering::Relaxed)
+                            <= max_messages_per_interval
+                        {
                             continue;
                         }
-
-                        let last_timestamp = last_timestamp_recieved.load(Ordering::Relaxed);
-
                         if sender
-                            .send(Message::Text(Utf8Bytes::from(last_timestamp.to_string())))
+                            .send(Message::Text(Utf8Bytes::from(
+                                last_timestamp_recieved.load(Ordering::Relaxed).to_string(),
+                            )))
                             .await
                             .is_err()
                         {
@@ -248,7 +247,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             }
         }
     });
-
     tokio::select! {
         _ = &mut send_task => recieve_task.abort(),
         _ = &mut recieve_task => send_task.abort(),
