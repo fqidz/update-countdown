@@ -38,20 +38,6 @@
  * @property {number} day
  */
 
-/**
- * @typedef CountdownElem
- * @property {HTMLElement} countdown_elem
- * @property {HTMLElement} days_elem
- * @property {HTMLElement} days_label
- * @property {HTMLElement} hours_elem
- * @property {HTMLElement} hours_label
- * @property {HTMLElement} minutes_elem
- * @property {HTMLElement} minutes_label
- * @property {HTMLElement} seconds_elem
- * @property {HTMLElement | null} seconds_label
- * @property {HTMLElement | null} milliseconds_elem
- */
-
 // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
 // 5:3 or 5/3
 const FONT_SIZE_VW_RATIO = 1.6666666666666666;
@@ -234,6 +220,179 @@ function getDuration(date_from, date_to) {
         minutes,
         seconds,
         milliseconds,
+    }
+}
+
+// TODO: Figure out a better way to do this. It feels very messy & not safe due to using a `Map`.
+class CountdownElem {
+    /** @type {Map<string, HTMLElement | null>} */
+    elems;
+
+    constructor() {
+        this.elems = new Map();
+
+        this.elems.set("countdown", document.getElementById("countdown"));
+        this.elems.set("countdown-days", document.getElementById("countdown-days"));
+        this.elems.set("days-label", document.getElementById("days-label"));
+        this.elems.set("countdown-hours", document.getElementById("countdown-hours"));
+        this.elems.set("hours-label", document.getElementById("hours-label"));
+        this.elems.set("countdown-minutes", document.getElementById("countdown-minutes"));
+        this.elems.set("minutes-label", document.getElementById("minutes-label"));
+        this.elems.set("countdown-seconds", document.getElementById("countdown-seconds"));
+
+        // Can all be null
+        this.elems.set("countdown-milliseconds", document.getElementById("countdown-milliseconds"));
+        this.elems.set("hours-spacer", document.getElementById("hours-spacer"));
+        this.elems.set("minutes-spacer", document.getElementById("minutes-spacer"));
+        this.elems.set("seconds-label", document.getElementById("seconds-label"));
+        this.elems.set("seconds-spacer", document.getElementById("seconds-spacer"));
+    }
+
+    /** @param {HTMLElement} elem */
+    #append_to_root_elem(elem) {
+        const countdown = this.elems.get("countdown");
+        if (countdown !== null && countdown !== undefined) {
+            countdown.appendChild(elem);
+            this.elems.set(elem.id, elem);
+        } else {
+            throw new Error("Countdown root element not found: id='countdown'");
+        }
+    }
+
+    /**
+     * @param {HTMLElement} elem_to_insert
+     * @param {string} target_elem_id
+     **/
+    #insert_before_elem(elem_to_insert, target_elem_id) {
+        const target = this.elems.get(target_elem_id);
+        if (target === null) {
+            throw new Error(`Target element not found: id='${target_elem_id}`);
+        } else if (target === undefined) {
+            throw new Error(`Target element was not initialized: id='${target_elem_id}`);
+        } else {
+            const target_parent = target.parentNode;
+            target_parent?.insertBefore(elem_to_insert, target);
+        }
+    }
+
+    /**
+     * @param {string} elem_id
+     * @param {string} tag_name
+     **/
+    #create_and_append_element_if_null(elem_id, tag_name) {
+        let elem = this.elems.get(elem_id);
+        if (elem === null) {
+            elem = document.createElement(tag_name);
+            elem.id = elem_id;
+
+            this.#append_to_root_elem(elem);
+        } else if (elem == undefined) {
+            throw new Error(`Element was not initialized: 'id=${elem_id}'`)
+        }
+        // no-op if element already exists
+    }
+
+    /**
+     * @param {string} label_id
+     * @param {string} html_for_id
+     **/
+    #create_and_append_label_if_null(label_id, html_for_id) {
+        let label = this.elems.get(label_id);
+        if (label === null) {
+            label = document.createElement("label");
+            label.id = label_id;
+            /** @type {HTMLLabelElement} */(label).htmlFor = html_for_id;
+
+            this.#append_to_root_elem(label);
+        } else if (label == undefined) {
+            throw new Error(`Label was not initialized: 'id=${label_id}'`)
+        }
+        // no-op if element already exists
+    }
+
+    /**
+     * @param {string} spacer_id
+     * @param {string} target_id
+     **/
+    #create_and_insert_spacer_if_null(spacer_id, target_id) {
+        let spacer = this.elems.get(spacer_id);
+        if (spacer === null) {
+            spacer = document.createElement("span");
+            spacer.id = spacer_id;
+            spacer.className = "countdown-spacer";
+
+            this.#insert_before_elem(spacer, target_id);
+        } else if (spacer == undefined) {
+            throw new Error(`Spacer was not initialized: 'id=${spacer_id}'`)
+        }
+        // no-op if element already exists
+    }
+
+    /**
+     * @param {string} elem_id
+     * @returns {HTMLElement}
+     **/
+    get_elem_or_throw(elem_id) {
+        let elem = this.elems.get(elem_id);
+        if (elem === null) {
+            throw new Error(`Element does not exist: 'id=${elem_id}'`)
+        } else if (elem == undefined) {
+            throw new Error(`Element was not initialized: 'id=${elem_id}'`)
+        } else {
+            return elem;
+        }
+    }
+
+    /** @param {string} elem_id */
+    #remove_elem(elem_id) {
+        let elem = this.elems.get(elem_id);
+        if (elem === null) {
+            // no-op
+        } else if (elem == undefined) {
+            throw new Error(`Element was not initialized: 'id=${elem_id}'`)
+        } else {
+            elem?.remove();
+            this.elems.set(elem_id, null);
+        }
+    }
+
+    /** @param {number} state CountdownState */
+    cycle_to_state(state) {
+        switch (state) {
+            case CountdownState.Compact:
+                this.#create_and_append_label_if_null("seconds-label", "countdown-seconds");
+                this.#create_and_append_element_if_null("countdown-milliseconds", "p");
+
+                this.get_elem_or_throw("days-label").textContent = ":";
+                this.get_elem_or_throw("hours-label").textContent = ":";
+                this.get_elem_or_throw("minutes-label").textContent = ":";
+                this.get_elem_or_throw("seconds-label").textContent = ".";
+
+                this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
+                break;
+
+            case CountdownState.CompactNoMillis:
+                this.#remove_elem("seconds-label");
+                this.#remove_elem("countdown-milliseconds");
+
+                this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
+                break;
+
+            case CountdownState.Blocky:
+                this.#create_and_append_label_if_null("seconds-label", "countdown-seconds");
+                this.#remove_elem("countdown-milliseconds");
+
+                this.get_elem_or_throw("days-label").textContent = "D";
+                this.get_elem_or_throw("hours-label").textContent = "H";
+                this.get_elem_or_throw("minutes-label").textContent = "M";
+                this.get_elem_or_throw("seconds-label").textContent = "S";
+
+                this.get_elem_or_throw("countdown").classList.replace("inline", "blocky");
+                break;
+
+            default:
+                throw new Error("Invalid state");
+        }
     }
 }
 
@@ -445,7 +604,7 @@ class CountdownDisplay {
             Object.keys(CountdownState).length,
             "countdown_state",
         );
-        this.elem = getCountdownElem();
+        this.elem = new CountdownElem();
     }
 
     /** @returns {number} */
@@ -467,12 +626,8 @@ class CountdownDisplay {
     #updateMilliseconds(event) {
         switch (this.state.state) {
             case CountdownState.Compact:
-                if (this.elem.milliseconds_elem !== null) {
-                    this.elem.milliseconds_elem.textContent = String(event.detail).padStart(
-                        3,
-                        "0",
-                    );
-                }
+                this.elem.get_elem_or_throw("countdown-milliseconds").textContent =
+                    String(event.detail).padStart(3, "0",);
                 break;
 
             case CountdownState.CompactNoMillis:
@@ -489,14 +644,13 @@ class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
-                this.elem.seconds_elem.textContent = String(event.detail).padStart(
-                    2,
-                    "0",
-                );
+                this.elem.get_elem_or_throw("countdown-seconds").textContent =
+                    String(event.detail).padStart(2, "0",);
                 break;
 
             case CountdownState.Blocky:
-                this.elem.seconds_elem.textContent = String(event.detail);
+                this.elem.get_elem_or_throw("countdown-seconds").textContent =
+                    String(event.detail);
                 break;
 
             default:
@@ -509,14 +663,13 @@ class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
-                this.elem.minutes_elem.textContent = String(event.detail).padStart(
-                    2,
-                    "0",
-                );
+                this.elem.get_elem_or_throw("countdown-minutes").textContent =
+                    String(event.detail).padStart(2, "0",);
                 break;
 
             case CountdownState.Blocky:
-                this.elem.minutes_elem.textContent = String(event.detail);
+                this.elem.get_elem_or_throw("countdown-minutes").textContent =
+                    String(event.detail);
                 break;
 
             default:
@@ -529,14 +682,13 @@ class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
-                this.elem.hours_elem.textContent = String(event.detail).padStart(
-                    2,
-                    "0",
-                );
+                this.elem.get_elem_or_throw("countdown-hours").textContent =
+                    String(event.detail).padStart(2, "0",);
                 break;
 
             case CountdownState.Blocky:
-                this.elem.hours_elem.textContent = String(event.detail);
+                this.elem.get_elem_or_throw("countdown-hours").textContent =
+                    String(event.detail);
                 break;
 
             default:
@@ -559,97 +711,33 @@ class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateTotalDays(event) {
-        const previous_len = this.elem.days_elem.textContent?.length;
+        const days_elem = this.elem.get_elem_or_throw("countdown-days");
+        const previous_len = days_elem.textContent?.length;
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
             case CountdownState.Blocky:
-                this.elem.days_elem.textContent = String(event.detail);
+                days_elem.textContent = String(event.detail);
                 break;
 
             default:
                 throw new Error("Invalid state");
         }
-        const new_len = this.elem.days_elem.textContent?.length;
+        const new_len = days_elem.textContent?.length;
         // TODO: fix this unnecssarily updating when countdown is started
         // because it goes from 0 days to whatever days;
         //
         // Only check days elem for a change in length, because the other elems
-        // have the same length all the time.
+        // have the same length all the time. BUT, it could also be that all of
+        // them have one digit, but that seems to happen too rarely to really
+        // care about.
         if (new_len !== previous_len) {
             this.#updateFontSize();
         }
     }
 
-    /** TODO: fix this steaming pile of garbage */
     #updateDisplayDOM() {
-        switch (this.state.state) {
-            case CountdownState.Compact:
-                if (this.elem.seconds_label === null) {
-                    const secs_label = document.createElement("label");
-                    secs_label.id = "secs-label";
-                    secs_label.htmlFor = "countdown-secs";
-
-                    this.elem.countdown_elem.appendChild(secs_label);
-                    this.elem.seconds_label = secs_label;
-                }
-
-                if (this.elem.milliseconds_elem === null) {
-                    const milliseconds_elem = document.createElement("p");
-                    milliseconds_elem.id = "countdown-millis";
-
-                    this.elem.countdown_elem.appendChild(milliseconds_elem);
-                    this.elem.milliseconds_elem = milliseconds_elem;
-                }
-
-                this.elem.days_label.textContent = ":";
-                this.elem.hours_label.textContent = ":";
-                this.elem.minutes_label.textContent = ":";
-                this.elem.seconds_label.textContent = ".";
-
-                this.elem.countdown_elem.classList.replace("blocky", "inline");
-                break;
-
-            case CountdownState.CompactNoMillis:
-                if (this.elem.seconds_label !== null) {
-                    this.elem.seconds_label.remove();
-                    this.elem.seconds_label = null;
-                }
-
-                if (this.elem.milliseconds_elem !== null) {
-                    this.elem.milliseconds_elem.remove();
-                    this.elem.milliseconds_elem = null;
-                }
-
-                this.elem.countdown_elem.classList.replace("blocky", "inline");
-                break;
-
-            case CountdownState.Blocky:
-                if (this.elem.seconds_label === null) {
-                    const secs_label = document.createElement("label");
-                    secs_label.id = "secs-label";
-                    secs_label.htmlFor = "countdown-secs";
-
-                    this.elem.countdown_elem.appendChild(secs_label);
-                    this.elem.seconds_label = secs_label;
-                }
-
-                if (this.elem.milliseconds_elem !== null) {
-                    this.elem.milliseconds_elem.remove();
-                    this.elem.milliseconds_elem = null;
-                }
-
-                this.elem.days_label.textContent = "D";
-                this.elem.hours_label.textContent = "H";
-                this.elem.minutes_label.textContent = "M";
-                this.elem.seconds_label.textContent = "S";
-
-                this.elem.countdown_elem.classList.replace("inline", "blocky");
-                break;
-
-            default:
-                throw new Error("Invalid state");
-        }
+        this.elem.cycle_to_state(this.state.state);
         if (this.countdown.interval_id !== null) {
             this.countdown.setIntervalTimeout(this.#getTimeout());
         }
@@ -663,17 +751,18 @@ class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
-                text_len = String(this.elem.countdown_elem.textContent).length;
+                text_len = String(this.elem.get_elem_or_throw("countdown").textContent).length;
                 text_num_lines = 1;
                 break;
 
             case CountdownState.Blocky:
                 text_len =
+                    // add one because of the label (i.e. D, H, M, S)
                     Math.max(
-                        String(this.elem.days_elem.textContent).length,
-                        String(this.elem.hours_elem.textContent).length,
-                        String(this.elem.minutes_elem.textContent).length,
-                        String(this.elem.seconds_elem.textContent).length,
+                        String(this.elem.get_elem_or_throw("countdown-days").textContent).length,
+                        String(this.elem.get_elem_or_throw("countdown-hours").textContent).length,
+                        String(this.elem.get_elem_or_throw("countdown-minutes").textContent).length,
+                        String(this.elem.get_elem_or_throw("countdown-seconds").textContent).length,
                     ) + 1;
                 text_num_lines = 4;
                 break;
@@ -685,7 +774,8 @@ class CountdownDisplay {
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * COUNTDOWN_VW) / text_len)}vw`;
         const font_size_vh = `${String((FONT_SIZE_VH_RATIO * COUNTDOWN_VH) / text_num_lines)}vh`;
 
-        this.elem.countdown_elem.style.fontSize = `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
+        this.elem.get_elem_or_throw("countdown").style.fontSize =
+            `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
     }
 
     /** @param {Object} new_datetime_target */
@@ -721,59 +811,6 @@ class CountdownDisplay {
 
         this.#updateFontSize();
     }
-}
-
-/** @returns {CountdownElem} */
-function getCountdownElem() {
-    const countdown_elem = document.getElementById("countdown");
-    if (countdown_elem === null) {
-        throw new Error("No element with id=\"countdown\"");
-    }
-    const days_elem = document.getElementById("countdown-days");
-    if (days_elem === null) {
-        throw new Error("No element with id=\"countdown-days\"");
-    }
-    const days_label = document.getElementById("days-label");
-    if (days_label === null) {
-        throw new Error("No element with id=\"days-label\"");
-    }
-    const hours_elem = document.getElementById("countdown-hours");
-    if (hours_elem === null) {
-        throw new Error("No element with id=\"countdown-hours\"");
-    }
-    const hours_label = document.getElementById("hours-label");
-    if (hours_label === null) {
-        throw new Error("No element with id=\"hours-label\"");
-    }
-    const minutes_elem = document.getElementById("countdown-mins");
-    if (minutes_elem === null) {
-        throw new Error("No element with id=\"countdown-mins\"");
-    }
-    const minutes_label = document.getElementById("mins-label");
-    if (minutes_label === null) {
-        throw new Error("No element with id=\"mins-label\"");
-    }
-    const seconds_elem = document.getElementById("countdown-secs");
-    if (seconds_elem === null) {
-        throw new Error("No element with id=\"countdown-secs\"");
-    }
-    // Can be null
-    const seconds_label = document.getElementById("secs-label");
-    // Can be null
-    const milliseconds_elem = document.getElementById("countdown-millis");
-
-    return {
-        countdown_elem,
-        days_elem,
-        days_label,
-        hours_elem,
-        hours_label,
-        minutes_elem,
-        minutes_label,
-        seconds_elem,
-        seconds_label,
-        milliseconds_elem,
-    };
 }
 
 class DatetimeDisplay {
@@ -974,26 +1011,22 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         countdown_display.cycleState();
     });
 
-    // TODO: fix it repeatedly activating when holding down enter
-    // countdown_elem?.addEventListener("keyup", (event) => {
-    //     if (event.key === "Enter") {
-    //         event.preventDefault();
-    //         countdown_display.cycleState();
-    //     }
-    // })
-    // countdown_elem?.addEventListener("keydown", (event) => {
-    //     event.preventDefault();
-    // })
-
     datetime_elem.addEventListener("click", () => {
         datetime_display.cycleState();
     });
 
-    // datetime_elem.addEventListener("keyup", (event) => {
-    //     event.preventDefault();
-    //     if (event.key === "Enter") {
-    //         datetime_display.cycleState();
-    //     }
-    // })
+    const refresh_button = document.getElementById("refresh");
+
+    // Prevent 'Enter' key from repeatedly pressing button when held down
+    refresh_button?.addEventListener("keyup", (event) => {
+        if (event.key == "Enter") {
+            websocket?.send(new Int8Array(0));
+        }
+    })
+    refresh_button?.addEventListener("keydown", (event) => {
+        if (event.key == "Enter") {
+            event.preventDefault();
+        }
+    })
 });
 

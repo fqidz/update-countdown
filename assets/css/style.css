@@ -2,7 +2,7 @@
     @media (prefers-color-scheme: dark) {
         --main-bg-color: 23, 23, 27;
         --main-fg-color: 237, 236, 255;
-        --dim-fg-color: 125, 124, 143;
+        --dim-fg-color: 145, 144, 163;
     }
 
     @media (prefers-color-scheme: light) {
@@ -31,9 +31,23 @@ html {
     background-color: rgb(var(--main-bg-color));
 }
 
-.font-roboto {
+.font-roboto-mono {
     font-family: "Roboto Mono", monospace;
     font-optical-sizing: auto;
+}
+
+.font-roboto {
+    font-family: "Roboto", sans-serif;
+}
+
+.font-title {
+    font-weight: 800;
+    font-style: normal;
+}
+
+.font-caption {
+    font-weight: 600;
+    font-style: normal;
 }
 
 .font-bold {
@@ -78,9 +92,7 @@ html {
 
 .display-container {
     align-self: center;
-    margin: auto;
-    /* width: 80vw; */
-    /* height: 60vh; */
+    margin: 2em 0;
     display: grid;
     row-gap: 3vw;
 }
@@ -101,6 +113,17 @@ html {
     width: fit-content;
     height: fit-content;
 }
+
+.caption-container {
+    align-self: center;
+    justify-self: center;
+    margin: 0 clamp(1.5em, 8vw, 15em);
+    font-size: clamp(0.8em, 2vw, 1.5em)
+}
+
+/* #update-caption { */
+/*     font-weight: 1000; */
+/* } */
 
 #countdown,
 #datetime {
