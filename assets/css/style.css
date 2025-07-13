@@ -3,12 +3,14 @@
         --main-bg-color: 23, 23, 27;
         --main-fg-color: 237, 236, 255;
         --dim-fg-color: 145, 144, 163;
+        --spacer-fg-color: 29, 29, 33;
     }
 
     @media (prefers-color-scheme: light) {
         --main-bg-color: 245, 245, 250;
         --main-fg-color: 10, 10, 15;
         --dim-fg-color: 118, 118, 123;
+        --spacer-fg-color: 235, 235, 240;
     }
 }
 
@@ -135,6 +137,10 @@ html {
     line-height: 0.8em;
 }
 
+.spacer {
+    color: rgb(var(--spacer-fg-color));
+}
+
 .button-refresh-container {
     display: flex;
     width: 100%;
@@ -150,6 +156,7 @@ html {
 button {
     background-color: transparent;
 }
+
 
 /* TODO: check if this works with stylus */
 @media (hover: hover) and (pointer: fine) {

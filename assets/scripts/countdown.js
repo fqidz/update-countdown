@@ -240,12 +240,19 @@ class CountdownElem {
         this.elems.set("minutes-label", document.getElementById("minutes-label"));
         this.elems.set("countdown-seconds", document.getElementById("countdown-seconds"));
 
-        // Can all be null
+        // The following can all be null
         this.elems.set("countdown-milliseconds", document.getElementById("countdown-milliseconds"));
+
+        this.elems.set("hours-container", document.getElementById("hours-container"));
         this.elems.set("hours-spacer", document.getElementById("hours-spacer"));
+
+        this.elems.set("minutes-container", document.getElementById("minutes-container"));
         this.elems.set("minutes-spacer", document.getElementById("minutes-spacer"));
-        this.elems.set("seconds-label", document.getElementById("seconds-label"));
+
+        this.elems.set("seconds-container", document.getElementById("seconds-container"));
         this.elems.set("seconds-spacer", document.getElementById("seconds-spacer"));
+
+        this.elems.set("seconds-label", document.getElementById("seconds-label"));
     }
 
     /** @param {HTMLElement} elem */
@@ -310,23 +317,23 @@ class CountdownElem {
         // no-op if element already exists
     }
 
-    /**
-     * @param {string} spacer_id
-     * @param {string} target_id
-     **/
-    #create_and_insert_spacer_if_null(spacer_id, target_id) {
-        let spacer = this.elems.get(spacer_id);
-        if (spacer === null) {
-            spacer = document.createElement("span");
-            spacer.id = spacer_id;
-            spacer.className = "countdown-spacer";
-
-            this.#insert_before_elem(spacer, target_id);
-        } else if (spacer == undefined) {
-            throw new Error(`Spacer was not initialized: 'id=${spacer_id}'`)
-        }
-        // no-op if element already exists
-    }
+    // /**
+    //  * @param {string} spacer_id
+    //  * @param {string} target_id
+    //  **/
+    // #create_and_insert_spacer_if_null(spacer_id, target_id) {
+    //     let spacer = this.elems.get(spacer_id);
+    //     if (spacer === null) {
+    //         spacer = document.createElement("span");
+    //         spacer.id = spacer_id;
+    //         spacer.className = "countdown-spacer";
+    //
+    //         this.#insert_before_elem(spacer, target_id);
+    //     } else if (spacer == undefined) {
+    //         throw new Error(`Spacer was not initialized: 'id=${spacer_id}'`)
+    //     }
+    //     // no-op if element already exists
+    // }
 
     /**
      * @param {string} elem_id
@@ -356,12 +363,72 @@ class CountdownElem {
         }
     }
 
+    /**
+     * @param {string} container_id
+     * @param {string} spacer_id
+     * @param {string} target_replace_id
+     **/
+    #replace_with_container(container_id, spacer_id, target_replace_id) {
+        if (this.elems.get(container_id) === null) {
+            const replacement_elem = document.createElement("p");
+            replacement_elem.id = target_replace_id;
+            replacement_elem.style.display = "inline";
+
+            const spacer = document.createElement("p");
+            spacer.id = spacer_id;
+            spacer.className = "spacer";
+            spacer.style.display = "inline";
+            spacer.ariaHidden = "true";
+
+            const container = document.createElement("div");
+            container.id = container_id;
+            // container.style.display = "inline";
+
+            container.appendChild(spacer);
+            container.appendChild(replacement_elem);
+
+            this.get_elem_or_throw(target_replace_id).replaceWith(container);
+
+            this.elems.set(container_id, container);
+            this.elems.set(spacer_id, spacer);
+            this.elems.set(target_replace_id, replacement_elem);
+        } else if (this.elems.get(container_id) === undefined) {
+            throw new Error(`Container was not initialized: 'id=${container_id}'`)
+        }
+        // no-op if container already exists
+    }
+
+    /**
+     * @param {string} container_id
+     * @param {string} spacer_id
+     * @param {string} inner_elem_id
+     **/
+    #restore_container(container_id, spacer_id, inner_elem_id) {
+        const container = this.elems.get(container_id);
+        if (container === null) {
+            // no-op
+        } else if (container === undefined) {
+            throw new Error(`Container was not initialized: 'id=${container_id}'`)
+        } else {
+            let inner_elem = this.get_elem_or_throw(inner_elem_id);
+            this.elems.set(container_id, null);
+            this.elems.set(spacer_id, null);
+            this.elems.set(inner_elem_id, inner_elem);
+
+            container.replaceWith(inner_elem);
+        }
+    }
+
     /** @param {number} state CountdownState */
     cycle_to_state(state) {
         switch (state) {
             case CountdownState.Compact:
                 this.#create_and_append_label_if_null("seconds-label", "countdown-seconds");
                 this.#create_and_append_element_if_null("countdown-milliseconds", "p");
+
+                this.#restore_container("hours-container", "hours-spacer", "countdown-hours");
+                this.#restore_container("minutes-container", "minutes-spacer", "countdown-minutes");
+                this.#restore_container("seconds-container", "seconds-spacer", "countdown-seconds");
 
                 this.get_elem_or_throw("days-label").textContent = ":";
                 this.get_elem_or_throw("hours-label").textContent = ":";
@@ -386,6 +453,10 @@ class CountdownElem {
                 this.get_elem_or_throw("hours-label").textContent = "H";
                 this.get_elem_or_throw("minutes-label").textContent = "M";
                 this.get_elem_or_throw("seconds-label").textContent = "S";
+
+                this.#replace_with_container("hours-container", "hours-spacer", "countdown-hours");
+                this.#replace_with_container("minutes-container", "minutes-spacer", "countdown-minutes");
+                this.#replace_with_container("seconds-container", "seconds-spacer", "countdown-seconds");
 
                 this.get_elem_or_throw("countdown").classList.replace("inline", "blocky");
                 break;
@@ -534,11 +605,14 @@ class Countdown extends EventTarget {
     }
 
     emitAll() {
-        this.#emitUpdateMilliseconds(this.#diff_duration.milliseconds);
-        this.#emitUpdateSeconds(this.#diff_duration.seconds);
-        this.#emitUpdateMinutes(this.#diff_duration.minutes);
-        this.#emitUpdateHours(this.#diff_duration.hours);
+        // update totaldays first so that the days_text_len updates first,
+        // which is used by setBlockyText
+        // TODO: fix it so it doesn't depend on order
         this.#emitUpdateDays(this.#diff_duration.days);
+        this.#emitUpdateHours(this.#diff_duration.hours);
+        this.#emitUpdateMinutes(this.#diff_duration.minutes);
+        this.#emitUpdateSeconds(this.#diff_duration.seconds);
+        this.#emitUpdateMilliseconds(this.#diff_duration.milliseconds);
         this.#emitUpdateTotalDays(this.#diff_duration.total_days);
     }
 
@@ -580,10 +654,10 @@ class CountdownDisplay {
     state;
     /** @type {CountdownElem} */
     elem;
+    /** @type {number} */
+    days_text_len
 
-    /**
-     * @param {Date} datetime
-     */
+    /** @param {Date} datetime */
     constructor(datetime) {
         this.countdown = new Countdown(datetime);
         this.state = new DisplayState(
@@ -605,6 +679,8 @@ class CountdownDisplay {
             "countdown_state",
         );
         this.elem = new CountdownElem();
+        this.days_text_len = 0;
+        this.is_first_update = true;
     }
 
     /** @returns {number} */
@@ -619,6 +695,40 @@ class CountdownDisplay {
 
             default:
                 throw new Error("Invalid state");
+        }
+    }
+
+    /**
+     * @param {string} elem_id
+     * @param {string} spacer_id
+     **/
+    #updateSpacer(elem_id, spacer_id) {
+        const len =
+            Math.max(this.days_text_len - (this.elem.get_elem_or_throw(elem_id).textContent?.length ?? 0), 0);
+        this.elem.get_elem_or_throw(spacer_id).textContent =
+            "0".repeat(len);
+    }
+
+    #updateAllSpacers() {
+        this.#updateSpacer("countdown-hours", "hours-spacer");
+        this.#updateSpacer("countdown-minutes", "minutes-spacer");
+        this.#updateSpacer("countdown-seconds", "seconds-spacer");
+    }
+
+    /**
+     * @param {string} elem_id
+     * @param {string} spacer_id
+     * @param {string} new_text
+     **/
+    #setBlockyText(elem_id, spacer_id, new_text) {
+        const elem = this.elem.get_elem_or_throw(elem_id);
+        const previous_spacer_len = Math.max(this.days_text_len - (elem.textContent?.length ?? 0), 0);
+        elem.textContent = new_text;
+        const new_spacer_len = Math.max(this.days_text_len - (elem.textContent?.length ?? 0), 0);
+
+        if (new_spacer_len != previous_spacer_len) {
+            this.elem.get_elem_or_throw(spacer_id).textContent =
+                "0".repeat(new_spacer_len);
         }
     }
 
@@ -649,8 +759,7 @@ class CountdownDisplay {
                 break;
 
             case CountdownState.Blocky:
-                this.elem.get_elem_or_throw("countdown-seconds").textContent =
-                    String(event.detail);
+                this.#setBlockyText("countdown-seconds", "seconds-spacer", String(event.detail));
                 break;
 
             default:
@@ -668,8 +777,7 @@ class CountdownDisplay {
                 break;
 
             case CountdownState.Blocky:
-                this.elem.get_elem_or_throw("countdown-minutes").textContent =
-                    String(event.detail);
+                this.#setBlockyText("countdown-minutes", "minutes-spacer", String(event.detail));
                 break;
 
             default:
@@ -687,8 +795,7 @@ class CountdownDisplay {
                 break;
 
             case CountdownState.Blocky:
-                this.elem.get_elem_or_throw("countdown-hours").textContent =
-                    String(event.detail);
+                this.#setBlockyText("countdown-hours", "hours-spacer", String(event.detail));
                 break;
 
             default:
@@ -701,6 +808,8 @@ class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+                break;
+
             case CountdownState.Blocky:
                 break;
 
@@ -724,15 +833,16 @@ class CountdownDisplay {
                 throw new Error("Invalid state");
         }
         const new_len = days_elem.textContent?.length;
-        // TODO: fix this unnecssarily updating when countdown is started
-        // because it goes from 0 days to whatever days;
-        //
-        // Only check days elem for a change in length, because the other elems
-        // have the same length all the time. BUT, it could also be that all of
-        // them have one digit, but that seems to happen too rarely to really
-        // care about.
         if (new_len !== previous_len) {
+            this.days_text_len = new_len;
+            // Only check days elem for a change in length, because the other elems
+            // have the same length all the time. BUT, it could also be that all of
+            // them have one digit, though that seems to happen too rarely to really
+            // care about.
             this.#updateFontSize();
+            if (this.state.state == CountdownState.Blocky) {
+                this.#updateAllSpacers();
+            }
         }
     }
 
