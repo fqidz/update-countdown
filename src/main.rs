@@ -49,10 +49,12 @@ struct AppState {
 
 impl AppState {
     // TODO: use serde
+    // TODO: use sqlx & sqlite instead of txt file
     fn load(path: impl Into<PathBuf>, tx: broadcast::Sender<i64>) -> Self {
         let contents = fs::read_to_string(path.into()).unwrap();
         let contents = contents
             .lines()
+            // skip header
             .skip(1)
             .map(|line| {
                 let mut data = line.split('\t');
@@ -132,6 +134,8 @@ async fn main() {
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
+
+    // TODO: save datetimes every 5 minutes
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
@@ -189,18 +193,18 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let mut send_task = tokio::spawn({
         // For each user, limit the amount of messages per interval to a specified amount. If the
-        // user has sent more messages than the specified amount, they would still increment the
-        // timestamp but waits until the interval finishes to send the lastest timestamp. The goal
-        // is to prevent users from recieving too many websocket messages, as this would cause tons
-        // of DOM updates (due to the countdown updating each time a message is recieved), which
-        // could possibly crash their browser.
+        // user has sent more messages than the specified amount, it would still increment the
+        // timestamp, but it waits until the interval finishes to send only the lastest timestamp.
+        // The goal is to prevent users from recieving too many websocket messages, as this would
+        // cause tons of DOM updates (due to the countdown updating each time a message is
+        // recieved), which could possibly crash their browser.
         //
         // NOTE: This is not guaranteed that each user will only have this amount of messages
         // recieved per interval. This means that with a decent amount of users, each user will
         // recieve much a lot more messages than what the limit specifies.
         //
-        // TODO: It would be better if, instead, we can control how many messages will be recieved
-        // by each user per interval.
+        // TODO: It would be better if, instead, we would control how many messages will be
+        // recieved by each user per interval.
         let max_messages_per_interval = 10u8;
         let mut interval = interval(Duration::from_millis(500));
         async move {
@@ -227,6 +231,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                             last_timestamp_recieved.store(timestamp_msg, Ordering::Relaxed);
                         }
                     },
+                    // Interval finishes
                     _ = interval.tick() => {
                         if num_recieved_in_interval.fetch_and(0, Ordering::Relaxed)
                             <= max_messages_per_interval
