@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
     sync::{
         Arc,
-        atomic::{AtomicI64, AtomicU8, Ordering},
+        atomic::{AtomicI64, AtomicU8, AtomicU32, Ordering},
     },
     time::Duration,
 };
@@ -44,6 +44,7 @@ struct CountdownTemplate {
 
 struct AppState {
     datetimes: RwLock<HashMap<String, DateTime<Utc>>>,
+    user_count: Arc<HashMap<String, AtomicU32>>,
     tx: broadcast::Sender<i64>,
 }
 
@@ -52,6 +53,7 @@ impl AppState {
     // TODO: use sqlx & sqlite instead of txt file
     fn load(path: impl Into<PathBuf>, tx: broadcast::Sender<i64>) -> Self {
         let contents = fs::read_to_string(path.into()).unwrap();
+        let mut names = Vec::new();
         let contents = contents
             .lines()
             // skip header
@@ -63,6 +65,7 @@ impl AppState {
                 if let [month, day, hour, minute, second] =
                     data.map(|v| v.parse::<u32>().unwrap()).collect::<Vec<_>>()[..]
                 {
+                    names.push(name);
                     let datetime: DateTime<Utc> = Utc
                         .with_ymd_and_hms(year, month, day, hour, minute, second)
                         .unwrap();
@@ -74,6 +77,12 @@ impl AppState {
             .collect::<HashMap<_, _>>();
         Self {
             datetimes: RwLock::new(contents),
+            user_count: Arc::new(
+                names
+                    .iter()
+                    .map(|name| (name.to_string(), AtomicU32::new(0)))
+                    .collect::<HashMap<_, _>>(),
+            ),
             tx,
         }
     }
@@ -173,19 +182,40 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     drop(datetime_read);
 
     let mut recieve_task = tokio::spawn({
+        let user_count = state
+            .user_count
+            .get("battlebit")
+            .unwrap()
+            .fetch_add(1, Ordering::Relaxed)
+            .saturating_add(1);
         let state_cloned = state.clone();
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
-            while let Some(Ok(Message::Binary(_msg))) = reciever.next().await {
+            tx.send(user_count as i64 * -1).unwrap();
+
+            while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
+                dbg!(&msg);
+                if !msg.is_empty() {
+                    continue;
+                }
                 let mut datetime_write = state_cloned.datetimes.write().await;
                 let datetime = datetime_write.get_mut("battlebit").unwrap();
 
                 let secs = secs_range.sample(&mut rng);
                 *datetime += Duration::from_secs(secs);
-
                 tx.send(datetime.timestamp_millis()).unwrap();
             }
+
+            let previous_user_count = state_cloned
+                .user_count
+                .get("battlebit")
+                .unwrap()
+                .fetch_sub(1, Ordering::Relaxed);
+            debug_assert!(previous_user_count != 0);
+
+            // Send user count as a negative number
+            tx.send((previous_user_count - 1) as i64 * -1).unwrap();
         }
     });
 
@@ -213,6 +243,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             loop {
                 tokio::select! {
                     Ok(timestamp_msg) = rx.recv() => {
+                        dbg!(timestamp_msg);
                         // Fetch, then increment, then also increment fetched value so that it
                         // matches the incremented value. Basically `add_fetch()`.
                         let num_messages = num_recieved_in_interval
@@ -252,6 +283,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             }
         }
     });
+
     tokio::select! {
         _ = &mut send_task => recieve_task.abort(),
         _ = &mut recieve_task => send_task.abort(),

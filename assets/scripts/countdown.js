@@ -1029,6 +1029,7 @@ function connectWebsocket() {
     const websocket = new WebSocket("battlebit/websocket");
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", onWebsocketMessage);
+    // websocket.addEventListener("open", onWebsocketOpen);
     is_websocket_open = true;
 
     return websocket;
@@ -1040,6 +1041,7 @@ function disconnectWebsocket() {
     }
     is_websocket_open = false;
     websocket.removeEventListener("message", onWebsocketMessage);
+    // websocket.removeEventListener("open", onWebsocketOpen);
     websocket.close();
     websocket = null;
 }
@@ -1057,16 +1059,22 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-websocket.addEventListener("open", (_event) => {
-    is_websocket_open = true;
-});
+// /** @param {Event} _event */
+// function onWebsocketOpen(_event) {
+//     websocket?.send(new Int8Array(1).fill(1));
+// }
 
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
+    let msg = Number(event.data);
+    if (msg < 0) {
+        return;
+    }
     datetime = new Date(Number(event.data));
     datetime_display.updateDatetime(datetime);
     countdown_display.updateDatetimeTarget(datetime);
 }
+
 
 /** @type {CountdownDisplay} */
 let countdown_display;
