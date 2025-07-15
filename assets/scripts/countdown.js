@@ -1070,7 +1070,7 @@ function onWebsocketMessage(event) {
     if (msg < 0) {
         return;
     }
-    datetime = new Date(Number(event.data));
+    datetime = new Date(Number(event.data) * 1000);
     datetime_display.updateDatetime(datetime);
     countdown_display.updateDatetimeTarget(datetime);
 }
@@ -1090,7 +1090,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         throw new Error("No element with id=\"datetime\"");
     }
 
-    const datetime = new Date(Number(datetime_elem.textContent));
+    const datetime = new Date(Number(datetime_elem.textContent) * 1000);
     datetime_display = new DatetimeDisplay(datetime)
     countdown_display = new CountdownDisplay(datetime);
 

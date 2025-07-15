@@ -176,7 +176,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let datetime_read = state.datetimes.read().await;
     let last_timestamp_recieved = Arc::new(AtomicI64::new(
-        datetime_read.get("battlebit").unwrap().timestamp_millis(),
+        datetime_read.get("battlebit").unwrap().timestamp(),
     ));
 
     drop(datetime_read);
@@ -204,7 +204,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
                 let secs = secs_range.sample(&mut rng);
                 *datetime += Duration::from_secs(secs);
-                tx.send(datetime.timestamp_millis()).unwrap();
+                tx.send(datetime.timestamp()).unwrap();
             }
 
             let previous_user_count = state_cloned
@@ -307,11 +307,11 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 
     // Send the new datetime to all clients connected to websocket
     let tx = state.tx.clone();
-    tx.send(datetime.timestamp_millis()).unwrap();
+    tx.send(datetime.timestamp()).unwrap();
 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
-        datetime: datetime.timestamp_millis(),
+        datetime: datetime.timestamp(),
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
@@ -333,7 +333,7 @@ async fn increment_datetime(
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
 
     *datetime += Duration::from_secs(secs);
-    (StatusCode::OK, datetime.timestamp_millis().to_string()).into_response()
+    (StatusCode::OK, datetime.timestamp().to_string()).into_response()
 }
 
 async fn query_datetime(
@@ -347,7 +347,7 @@ async fn query_datetime(
     let datetime_read = state_cloned.datetimes.read().await;
     let datetime = datetime_read.get(&game_name).unwrap();
 
-    (StatusCode::OK, datetime.timestamp_millis().to_string()).into_response()
+    (StatusCode::OK, datetime.timestamp().to_string()).into_response()
 }
 
 async fn shutdown_signal() {
