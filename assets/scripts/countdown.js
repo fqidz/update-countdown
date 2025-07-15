@@ -267,22 +267,6 @@ class CountdownElem {
     }
 
     /**
-     * @param {HTMLElement} elem_to_insert
-     * @param {string} target_elem_id
-     **/
-    #insert_before_elem(elem_to_insert, target_elem_id) {
-        const target = this.elems.get(target_elem_id);
-        if (target === null) {
-            throw new Error(`Target element not found: id='${target_elem_id}`);
-        } else if (target === undefined) {
-            throw new Error(`Target element was not initialized: id='${target_elem_id}`);
-        } else {
-            const target_parent = target.parentNode;
-            target_parent?.insertBefore(elem_to_insert, target);
-        }
-    }
-
-    /**
      * @param {string} elem_id
      * @param {string} tag_name
      **/
@@ -316,24 +300,6 @@ class CountdownElem {
         }
         // no-op if element already exists
     }
-
-    // /**
-    //  * @param {string} spacer_id
-    //  * @param {string} target_id
-    //  **/
-    // #create_and_insert_spacer_if_null(spacer_id, target_id) {
-    //     let spacer = this.elems.get(spacer_id);
-    //     if (spacer === null) {
-    //         spacer = document.createElement("span");
-    //         spacer.id = spacer_id;
-    //         spacer.className = "countdown-spacer";
-    //
-    //         this.#insert_before_elem(spacer, target_id);
-    //     } else if (spacer == undefined) {
-    //         throw new Error(`Spacer was not initialized: 'id=${spacer_id}'`)
-    //     }
-    //     // no-op if element already exists
-    // }
 
     /**
      * @param {string} elem_id
@@ -605,9 +571,6 @@ class Countdown extends EventTarget {
     }
 
     emitAll() {
-        // update totaldays first so that the days_text_len updates first,
-        // which is used by setBlockyText
-        // TODO: fix it so it doesn't depend on order
         this.#emitUpdateDays(this.#diff_duration.days);
         this.#emitUpdateHours(this.#diff_duration.hours);
         this.#emitUpdateMinutes(this.#diff_duration.minutes);
@@ -948,8 +911,8 @@ class DatetimeDisplay {
     }
 
     #updateDisplayDOM() {
-        // No need to update font size because it only changes length at 10000
-        // years
+        // No need to update font size because it only changes length at year
+        // 10000
         switch (this.state.state) {
             case DatetimeState.Utc:
                 this.elem.textContent = this.datetime.toUTCString();
@@ -1012,9 +975,6 @@ class DatetimeDisplay {
     }
 }
 
-// TODO: deal with websocket not connecting or when server is down. maybe add
-// skeleton screen / greeking
-
 /** @type {Object | null} */
 let datetime = null;
 
@@ -1029,7 +989,6 @@ function connectWebsocket() {
     const websocket = new WebSocket("battlebit/websocket");
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", onWebsocketMessage);
-    // websocket.addEventListener("open", onWebsocketOpen);
     is_websocket_open = true;
 
     return websocket;
@@ -1041,7 +1000,6 @@ function disconnectWebsocket() {
     }
     is_websocket_open = false;
     websocket.removeEventListener("message", onWebsocketMessage);
-    // websocket.removeEventListener("open", onWebsocketOpen);
     websocket.close();
     websocket = null;
 }
@@ -1058,11 +1016,6 @@ document.addEventListener("visibilitychange", () => {
         countdown_display.pause();
     }
 });
-
-// /** @param {Event} _event */
-// function onWebsocketOpen(_event) {
-//     websocket?.send(new Int8Array(1).fill(1));
-// }
 
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
@@ -1147,4 +1100,3 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         }
     })
 });
-
