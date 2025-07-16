@@ -195,7 +195,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             tx.send(user_count as i64 * -1).unwrap();
 
             while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
-                dbg!(&msg);
                 if !msg.is_empty() {
                     continue;
                 }
@@ -243,7 +242,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             loop {
                 tokio::select! {
                     Ok(timestamp_msg) = rx.recv() => {
-                        dbg!(timestamp_msg);
                         // Fetch, then increment, then also increment fetched value so that it
                         // matches the incremented value. Basically `add_fetch()`.
                         let num_messages = num_recieved_in_interval

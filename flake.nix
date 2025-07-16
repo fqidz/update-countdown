@@ -25,6 +25,7 @@
         pkgs.upx
         pkgs.oha
         pkgs.biome
+        pkgs.python3Packages.locust
       ];
 
       buildInputs = [

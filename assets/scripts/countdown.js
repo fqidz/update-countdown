@@ -1017,10 +1017,17 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
+let user_count = 1;
+
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
     let msg = Number(event.data);
     if (msg < 0) {
+        user_count = msg * -1;
+        const user_count_elem = document.getElementById("user-count");
+        if (user_count_elem !== null) {
+            user_count_elem.textContent = String(user_count);
+        }
         return;
     }
     datetime = new Date(Number(event.data) * 1000);

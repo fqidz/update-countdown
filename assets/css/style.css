@@ -150,7 +150,6 @@ html {
     bottom: 0;
     padding-top: 1vh;
     padding-bottom: 0.8vh;
-    background-color: rgba(var(--main-bg-color), 0.9);
 }
 
 button {
@@ -170,6 +169,22 @@ button#refresh:hover>svg {
     fill: #505050;
     transform: rotate(20deg);
 }
+
+.user-count-container {
+    position: absolute;
+    display: flex;
+    bottom: 4vh;
+    left: 4vh;
+}
+
+.user-count-container>svg {
+    fill: rgb(var(--dim-fg-color));
+}
+
+#user-count {
+    padding-top: 1px;
+}
+
 
 @keyframes refresh {
     0%, 100% {
