@@ -1021,16 +1021,17 @@ let user_count = 1;
 
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
-    let msg = Number(event.data);
-    if (msg < 0) {
-        user_count = msg * -1;
-        const user_count_elem = document.getElementById("user-count");
-        if (user_count_elem !== null) {
-            user_count_elem.textContent = String(user_count);
-        }
+    const timestamp_seconds = new DataView(event.data).getBigInt64(0, false);
+    if (timestamp_seconds < 0) {
+        // TODO: separate user_count to a different websocket
         return;
     }
-    datetime = new Date(Number(event.data) * 1000);
+    if (timestamp_seconds > Number.MAX_SAFE_INTEGER) {
+        throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${timestamp_seconds}`)
+    } else if (timestamp_seconds < Number.MIN_SAFE_INTEGER) {
+        throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${timestamp_seconds}`)
+    }
+    datetime = new Date(Number(timestamp_seconds) * 1000);
     datetime_display.updateDatetime(datetime);
     countdown_display.updateDatetimeTarget(datetime);
 }

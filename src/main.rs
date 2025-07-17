@@ -12,9 +12,10 @@ use std::{
 use askama::Template;
 use axum::{
     Router,
+    body::Bytes,
     extract::{
         Path, State, WebSocketUpgrade,
-        ws::{Message, Utf8Bytes, WebSocket},
+        ws::{Message, WebSocket},
     },
     http::StatusCode,
     response::{Html, IntoResponse, Redirect},
@@ -196,7 +197,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
             while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
                 if !msg.is_empty() {
-                    continue;
+                    break;
                 }
                 let mut datetime_write = state_cloned.datetimes.write().await;
                 let datetime = datetime_write.get_mut("battlebit").unwrap();
@@ -250,7 +251,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
                         if num_messages <= max_messages_per_interval {
                             if sender
-                                .send(Message::Text(Utf8Bytes::from(timestamp_msg.to_string())))
+                                .send(Message::Binary(Bytes::from_iter(timestamp_msg.to_be_bytes())))
                                 .await
                                 .is_err()
                             {
@@ -268,9 +269,9 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                             continue;
                         }
                         if sender
-                            .send(Message::Text(Utf8Bytes::from(
-                                last_timestamp_recieved.load(Ordering::Relaxed).to_string(),
-                            )))
+                            .send(Message::Binary(
+                                Bytes::from_iter(last_timestamp_recieved.load(Ordering::Relaxed).to_be_bytes()),
+                            ))
                             .await
                             .is_err()
                         {
