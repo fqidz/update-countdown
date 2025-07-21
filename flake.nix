@@ -1,36 +1,60 @@
 {
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-  outputs = { self, nixpkgs }:
-  let
-    pkgs = import nixpkgs {
-      system = "x86_64-linux";
-      # config.allowUnfree = true;
-    };
-  in
-  {
-    devShells."x86_64-linux".default = pkgs.mkShell {
-      packages = [
-        pkgs.rustc
-        pkgs.rust-analyzer
-        pkgs.rustfmt
-        pkgs.cargo
-        pkgs.typescript-language-server
-        pkgs.vscode-langservers-extracted
-        pkgs.jinja-lsp
-
-        pkgs.minify
-
-        pkgs.chromium
-        pkgs.upx
-        pkgs.oha
-        pkgs.biome
-        pkgs.python3Packages.locust
-      ];
-
-      buildInputs = [
-        pkgs.lld
-      ];
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    systems.url = "github:nix-systems/default";
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+      inputs.systems.follows = "systems";
     };
   };
+
+  outputs =
+    { nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        devShells = {
+          # Packages required for developing this project
+          "dev" = pkgs.mkShell {
+            packages = [
+              pkgs.jinja-lsp
+              pkgs.rust-analyzer
+              pkgs.rustfmt
+              pkgs.typescript-language-server
+              pkgs.vscode-langservers-extracted
+
+              pkgs.cargo
+              pkgs.rustc
+
+              pkgs.minify
+              pkgs.upx
+
+              pkgs.biome
+              pkgs.chromium
+              pkgs.oha
+              pkgs.python3Packages.locust
+
+              pkgs.lld
+            ];
+          };
+
+          # Packages required to build this project
+          "build" = pkgs.mkShell {
+            packages = [
+              pkgs.cargo
+              pkgs.rustc
+
+              pkgs.minify
+              pkgs.upx
+
+              pkgs.lld
+            ];
+          };
+
+        };
+      }
+    );
 }
