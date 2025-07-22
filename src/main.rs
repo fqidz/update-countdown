@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicI64, AtomicU8, AtomicU32, Ordering};
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use hashbrown::HashMap;
 
 use askama::Template;
@@ -96,14 +96,31 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
 
-    // TODO: save datetimes every 5 minutes
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+    let save_interval_task = tokio::spawn({
+        let mut save_interval = interval(Duration::from_secs(60 * 5));
+        // Do this because first tick completes immediately
+        save_interval.tick().await;
+        let state_cloned = state.clone();
+        async move {
+            loop {
+                save_interval.tick().await;
+                state_cloned.save(SAVE_FILE_PATH).await;
+                // TODO: use proper logging with a library
+                eprintln!("[{}] Saved state", Local::now().time().format("%H:%M:%S"));
+            }
+        }
+    });
 
-    eprintln!();
-    eprintln!("Server shutting down...");
+    let serve_task = axum::serve(listener, app).with_graceful_shutdown(shutdown_signal());
+
+    eprintln!("Server on");
+
+    tokio::select! {
+        _ = serve_task => {}
+        _ = save_interval_task => {}
+    }
+
+    eprintln!("\nServer shutting down...");
     eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
     state.save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");
