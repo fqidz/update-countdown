@@ -560,7 +560,7 @@ class Countdown extends EventTarget {
      */
     setIntervalTimeout(new_timeout) {
         if (new_timeout === null) {
-            console.error("Invalid new_timeout");
+            throw new Error("Invalid new_timeout");
         } else {
             if (this.interval_id !== null) {
                 clearInterval(this.interval_id);
@@ -1021,19 +1021,27 @@ let user_count = 1;
 
 /** @param {MessageEvent} event */
 function onWebsocketMessage(event) {
-    const timestamp_seconds = new DataView(event.data).getBigInt64(0, false);
-    if (timestamp_seconds < 0) {
-        // TODO: separate user_count to a different websocket
-        return;
+    const msg = new DataView(event.data).getBigInt64(0, false);
+
+    if (msg > Number.MAX_SAFE_INTEGER) {
+        throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${msg}`)
+    } else if (msg < Number.MIN_SAFE_INTEGER) {
+        throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`)
     }
-    if (timestamp_seconds > Number.MAX_SAFE_INTEGER) {
-        throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${timestamp_seconds}`)
-    } else if (timestamp_seconds < Number.MIN_SAFE_INTEGER) {
-        throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${timestamp_seconds}`)
+
+    let msg_as_number = Number(msg);
+
+    if (msg_as_number < 0) {
+        user_count = msg_as_number * -1;
+        let user_count_elem = document.getElementById("user-count");
+        if (user_count_elem !== null) {
+            user_count_elem.textContent = String(user_count);
+        }
+    } else {
+        datetime = new Date(msg_as_number * 1000);
+        datetime_display.updateDatetime(datetime);
+        countdown_display.updateDatetimeTarget(datetime);
     }
-    datetime = new Date(Number(timestamp_seconds) * 1000);
-    datetime_display.updateDatetime(datetime);
-    countdown_display.updateDatetimeTarget(datetime);
 }
 
 

@@ -1,38 +1,29 @@
-use std::{
-    fs,
-    ops::Range,
-    sync::{
-        Arc,
-        atomic::{AtomicI64, AtomicU8, AtomicU32, Ordering},
-    },
-    time::Duration,
-};
+use std::fs;
+use std::ops::Range;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicI64, AtomicU8, AtomicU32, Ordering};
+use std::time::Duration;
+
+use chrono::{DateTime, Utc};
+use hashbrown::HashMap;
 
 use askama::Template;
-use axum::{
-    Router,
-    body::Bytes,
-    extract::{
-        Path, State, WebSocketUpgrade,
-        ws::{Message, WebSocket},
-    },
-    http::StatusCode,
-    response::{Html, IntoResponse, Redirect},
-    routing::{get, get_service, post},
-};
-use chrono::{DateTime, Utc};
+use axum::Router;
+use axum::body::Bytes;
+use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{Path, State, WebSocketUpgrade};
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::routing::{get, get_service, post};
+
+use rand::distr::{Distribution, Uniform};
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
+
 use futures::{SinkExt, stream::StreamExt};
-use hashbrown::HashMap;
-use rand::{
-    Rng, SeedableRng,
-    distr::{Distribution, Uniform},
-    rngs::SmallRng,
-};
-use tokio::{
-    signal,
-    sync::{RwLock, broadcast},
-    time::interval,
-};
+use tokio::signal;
+use tokio::sync::{RwLock, broadcast};
+use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 #[derive(Template)]
@@ -40,6 +31,7 @@ use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::Tim
 struct CountdownTemplate {
     title: String,
     datetime: i64,
+    user_count: u32,
 }
 
 struct AppState {
@@ -78,6 +70,7 @@ impl AppState {
 
 const SECS_INCREMENT_RANGE: Range<u64> = (25 * 60)..(35 * 60);
 const SAVE_FILE_PATH: &str = "save.json";
+const MAX_MESSAGES_PER_INTERVAL: u8 = 10;
 
 #[tokio::main]
 async fn main() {
@@ -112,7 +105,7 @@ async fn main() {
     eprintln!();
     eprintln!("Server shutting down...");
     eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
-    state.clone().save(SAVE_FILE_PATH).await;
+    state.save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");
 }
 
@@ -131,7 +124,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut reciever) = stream.split();
 
     let tx = state.tx.clone();
-    let num_recieved_in_interval = Arc::new(AtomicU8::new(0));
+    let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
     let datetime_read = state.datetimes.read().await;
     let last_timestamp_recieved = Arc::new(AtomicI64::new(
@@ -193,7 +186,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         //
         // TODO: It would be better if, instead, we would control how many messages will be
         // recieved by each user per interval.
-        let max_messages_per_interval = 10u8;
         let mut interval = interval(Duration::from_millis(500));
         async move {
             // TODO: would stream merging be a better choice instead of `select!` inside `loop`?
@@ -203,11 +195,11 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                     Ok(timestamp_msg) = rx.recv() => {
                         // Fetch, then increment, then also increment fetched value so that it
                         // matches the incremented value. Basically `add_fetch()`.
-                        let num_messages = num_recieved_in_interval
+                        let num_messages = num_messages_recieved
                             .fetch_add(1, Ordering::Relaxed)
                             .saturating_add(1);
 
-                        if num_messages <= max_messages_per_interval {
+                        if num_messages <= MAX_MESSAGES_PER_INTERVAL {
                             if sender
                                 .send(Message::Binary(Bytes::from_iter(timestamp_msg.to_be_bytes())))
                                 .await
@@ -221,8 +213,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                     },
                     // Interval finishes
                     _ = interval.tick() => {
-                        if num_recieved_in_interval.fetch_and(0, Ordering::Relaxed)
-                            <= max_messages_per_interval
+                        if num_messages_recieved.fetch_and(0, Ordering::Relaxed)
+                            <= MAX_MESSAGES_PER_INTERVAL
                         {
                             continue;
                         }
@@ -254,9 +246,13 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 // because it first displays the previous datetime, increments the datetime through the websocket,
 // then after a few milliseconds it gets replaced by the new datetime.
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let state_cloned = state.clone();
-    let mut datetime_write = state_cloned.datetimes.write().await;
+    let mut datetime_write = state.datetimes.write().await;
     let datetime = datetime_write.get_mut("battlebit").unwrap();
+    let user_count = state
+        .user_count
+        .get("battlebit")
+        .unwrap()
+        .load(Ordering::Relaxed);
 
     let mut rng = rand::rng();
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
@@ -269,6 +265,7 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
         datetime: datetime.timestamp(),
+        user_count,
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
@@ -282,8 +279,7 @@ async fn increment_datetime(
         return (StatusCode::UNAUTHORIZED).into_response();
     }
 
-    let state_cloned = state.clone();
-    let mut datetime_write = state_cloned.datetimes.write().await;
+    let mut datetime_write = state.datetimes.write().await;
     let datetime = datetime_write.get_mut(&game_name).unwrap();
 
     let mut rng = rand::rng();
@@ -300,8 +296,7 @@ async fn query_datetime(
     if game_name != "battlebit" {
         return (StatusCode::UNAUTHORIZED).into_response();
     }
-    let state_cloned = state.clone();
-    let datetime_read = state_cloned.datetimes.read().await;
+    let datetime_read = state.datetimes.read().await;
     let datetime = datetime_read.get(&game_name).unwrap();
 
     (StatusCode::OK, datetime.timestamp().to_string()).into_response()
