@@ -49,7 +49,7 @@ const FONT_SIZE_VH_RATIO = 1.25;
 const COUNTDOWN_VW = 80;
 const COUNTDOWN_VH = 50;
 
-const DATETIME_VW = 40;
+const DATETIME_VW = 30;
 
 /** Enums for different countdown display states */
 const CountdownState = Object.freeze({
@@ -898,7 +898,7 @@ class DatetimeDisplay {
     constructor(datetime) {
         this.datetime = datetime;
         this.state = new DisplayState(
-            Number(localStorage.getItem("datetime_state")) || DatetimeState.Utc,
+            Number(localStorage.getItem("datetime_state")) || DatetimeState.LocalTimezone,
             Object.keys(DatetimeState).length,
             "datetime_state",
         );
@@ -1067,7 +1067,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     countdown_display.start();
 
     const refresh_button_elem = document.getElementById("refresh");
-    if (refresh_button_elem === null) {
+    if (refresh_button_elem === null ) {
         throw new Error("No element with id=\"refresh\"");
     }
 
@@ -1078,20 +1078,22 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         }
     });
 
-    refresh_button_elem.addEventListener("pointerup", (event) => {
-        let child_svg = refresh_button_elem.children[0];
-        if (event.pointerType === "mouse") {
-            /** @type {HTMLElement} */(child_svg).classList.add("animatejump");
-            setTimeout(() => {
-                /** @type {HTMLElement} */(child_svg).classList.remove("animatejump");
-            }, 200)
-        } else {
-            /** @type {HTMLElement} */(child_svg).classList.add("animate");
-            setTimeout(() => {
-                /** @type {HTMLElement} */(child_svg).classList.remove("animate");
-            }, 200)
-        }
-    });
+    // let is_touch_device = (matchMedia("(max-width: 600px)").matches);
+
+    // refresh_button_elem.addEventListener("pointerup", (event) => {
+    //     let child_svg = refresh_button_elem.children[0];
+    //     if (event.pointerType === "mouse") {
+    //         /** @type {HTMLElement} */(child_svg).classList.add("animatejump");
+    //         setTimeout(() => {
+    //             /** @type {HTMLElement} */(child_svg).classList.remove("animatejump");
+    //         }, 200)
+    //     } else {
+    //         /** @type {HTMLElement} */(child_svg).classList.add("animate");
+    //         setTimeout(() => {
+    //             /** @type {HTMLElement} */(child_svg).classList.remove("animate");
+    //         }, 200)
+    //     }
+    // });
 
     const countdown_elem = document.getElementById("countdown");
     countdown_elem?.addEventListener("click", () => {
