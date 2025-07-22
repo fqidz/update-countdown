@@ -1,7 +1,6 @@
 use std::{
     fs,
     ops::Range,
-    path::PathBuf,
     sync::{
         Arc,
         atomic::{AtomicI64, AtomicU8, AtomicU32, Ordering},
@@ -21,7 +20,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
     routing::{get, get_service, post},
 };
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Utc};
 use futures::{SinkExt, stream::StreamExt};
 use hashbrown::HashMap;
 use rand::{
@@ -50,34 +49,17 @@ struct AppState {
 }
 
 impl AppState {
-    // TODO: use serde
-    // TODO: use sqlx & sqlite instead of txt file
-    fn load(path: impl Into<PathBuf>, tx: broadcast::Sender<i64>) -> Self {
-        let contents = fs::read_to_string(path.into()).unwrap();
+    fn load(path: impl AsRef<std::path::Path>, tx: broadcast::Sender<i64>) -> Self {
+        let file_contents = fs::read_to_string(path).unwrap();
+        let datetimes: HashMap<String, DateTime<Utc>> =
+            serde_json::from_str(&file_contents).unwrap();
+
         let mut names = Vec::new();
-        let contents = contents
-            .lines()
-            // skip header
-            .skip(1)
-            .map(|line| {
-                let mut data = line.split('\t');
-                let name = data.next().unwrap();
-                let year = data.next().unwrap().parse::<i32>().unwrap();
-                if let [month, day, hour, minute, second] =
-                    data.map(|v| v.parse::<u32>().unwrap()).collect::<Vec<_>>()[..]
-                {
-                    names.push(name);
-                    let datetime: DateTime<Utc> = Utc
-                        .with_ymd_and_hms(year, month, day, hour, minute, second)
-                        .unwrap();
-                    return (name.to_string(), datetime);
-                } else {
-                    panic!("Save cannot be parsed.");
-                }
-            })
-            .collect::<HashMap<_, _>>();
+        for k in datetimes.clone().into_keys() {
+            names.push(k);
+        }
         Self {
-            datetimes: RwLock::new(contents),
+            datetimes: RwLock::new(datetimes),
             user_count: Arc::new(
                 names
                     .iter()
@@ -88,43 +70,19 @@ impl AppState {
         }
     }
 
-    async fn to_ymd_and_hms(&self) -> String {
-        self.datetimes
-            .read()
-            .await
-            .iter()
-            .map(|(name, datetime)| {
-                let year = datetime.year();
-                let month = datetime.month();
-                let day = datetime.day();
-                let hour = datetime.hour();
-                let minute = datetime.minute();
-                let seconds = datetime.second();
-                format!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                    name, year, month, day, hour, minute, seconds
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-
-    async fn save(&self, path: impl Into<PathBuf>) {
-        let header = "name\tyear\tmonth\tday\thour\tminute\tsecond";
-        let contents = self.to_ymd_and_hms().await;
-        fs::write(path.into(), format!("{}\n{}", header, contents)).expect(&format!(
-            "Could not save state. Printing contents instead:\n{}",
-            &contents
-        ));
+    async fn save(&self, path: impl AsRef<std::path::Path>) {
+        let contents = serde_json::to_string_pretty(&*self.datetimes.read().await).unwrap();
+        fs::write(path, contents).unwrap();
     }
 }
 
 const SECS_INCREMENT_RANGE: Range<u64> = (25 * 60)..(35 * 60);
+const SAVE_FILE_PATH: &str = "save.json";
 
 #[tokio::main]
 async fn main() {
     let (tx, _rx) = broadcast::channel::<i64>(20000);
-    let state = Arc::new(AppState::load("save.txt", tx));
+    let state = Arc::new(AppState::load(SAVE_FILE_PATH, tx));
 
     let compression_layer = CompressionLayer::new()
         .br(true)
@@ -153,8 +111,8 @@ async fn main() {
 
     eprintln!();
     eprintln!("Server shutting down...");
-    eprintln!("Saving state to `save.txt`");
-    state.clone().save("save.txt").await;
+    eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
+    state.clone().save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");
 }
 

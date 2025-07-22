@@ -7,10 +7,12 @@ build = "build.rs"
 [dependencies]
 askama = { version = "0.14.0", features = ["blocks"] }
 axum = { version = "0.8.4", features = ["ws"] }
-chrono = "0.4.41"
+chrono = { version = "0.4.41", features = ["serde"] }
 futures = "0.3.31"
-hashbrown = "0.15.3"
+hashbrown = { version = "0.15.3", features = ["serde"] }
 rand = "0.9.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.141"
 tokio = { version = "1.45.0", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["full"] }
 walkdir = "2.5.0"

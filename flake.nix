@@ -35,6 +35,7 @@
               pkgs.biome
               pkgs.chromium
               pkgs.oha
+              pkgs.cargo-expand
               # pkgs.python3Packages.locust
 
               pkgs.lld
