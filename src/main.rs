@@ -140,7 +140,6 @@ async fn websocket_handler(
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut reciever) = stream.split();
 
-    let tx = state.tx.clone();
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
     let datetime_read = state.datetimes.read().await;
@@ -151,6 +150,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     drop(datetime_read);
 
     let mut recieve_task = tokio::spawn({
+        let tx = state.tx.clone();
         let user_count = state
             .user_count
             .get("battlebit")
@@ -161,6 +161,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
+            // Send incremented user count
             tx.send(user_count as i64 * -1).unwrap();
 
             while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
@@ -174,16 +175,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                 *datetime += Duration::from_secs(secs);
                 tx.send(datetime.timestamp()).unwrap();
             }
-
-            let previous_user_count = state_cloned
-                .user_count
-                .get("battlebit")
-                .unwrap()
-                .fetch_sub(1, Ordering::Relaxed);
-            debug_assert!(previous_user_count != 0);
-
-            // Send user count as a negative number
-            tx.send((previous_user_count - 1) as i64 * -1).unwrap();
         }
     });
 
@@ -250,10 +241,26 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         }
     });
 
+    // Abort the other task if one of them ends.
     tokio::select! {
         _ = &mut send_task => recieve_task.abort(),
         _ = &mut recieve_task => send_task.abort(),
     };
+
+    // Decrement & broadcast/send updated user_count
+    let tx = state.tx.clone();
+    let user_count = state
+        .user_count
+        .get("battlebit")
+        .unwrap()
+        .fetch_sub(1, Ordering::Relaxed)
+        .checked_sub(1)
+        .expect("underflow");
+
+    let user_count = (user_count as i64) * -1;
+
+    // Send user count as a negative number
+    tx.send(user_count).unwrap();
 }
 
 // Increment datetime directly when getting this page, so that the datetime is displayed
