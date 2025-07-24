@@ -40,7 +40,7 @@
 
 // With a 5:3 ratio, a font size of 5vw results in character width of 3vw
 // 5:3 or 5/3
-const FONT_SIZE_VW_RATIO = 1.6666666666666666;
+const FONT_SIZE_VW_RATIO = 1.6666666666666665;
 // 5:4 or 5/4
 const FONT_SIZE_VH_RATIO = 1.25;
 
@@ -277,7 +277,7 @@ class CountdownElem {
             elem.id = elem_id;
 
             this.#append_to_root_elem(elem);
-        } else if (elem == undefined) {
+        } else if (elem === undefined) {
             throw new Error(`Element was not initialized: 'id=${elem_id}'`)
         }
         // no-op if element already exists
@@ -295,7 +295,7 @@ class CountdownElem {
             /** @type {HTMLLabelElement} */(label).htmlFor = html_for_id;
 
             this.#append_to_root_elem(label);
-        } else if (label == undefined) {
+        } else if (label === undefined) {
             throw new Error(`Label was not initialized: 'id=${label_id}'`)
         }
         // no-op if element already exists
@@ -306,10 +306,10 @@ class CountdownElem {
      * @returns {HTMLElement}
      **/
     get_elem_or_throw(elem_id) {
-        let elem = this.elems.get(elem_id);
+        const elem = this.elems.get(elem_id);
         if (elem === null) {
             throw new Error(`Element does not exist: 'id=${elem_id}'`)
-        } else if (elem == undefined) {
+        } else if (elem === undefined) {
             throw new Error(`Element was not initialized: 'id=${elem_id}'`)
         } else {
             return elem;
@@ -318,10 +318,10 @@ class CountdownElem {
 
     /** @param {string} elem_id */
     #remove_elem(elem_id) {
-        let elem = this.elems.get(elem_id);
+        const elem = this.elems.get(elem_id);
         if (elem === null) {
             // no-op
-        } else if (elem == undefined) {
+        } else if (elem === undefined) {
             throw new Error(`Element was not initialized: 'id=${elem_id}'`)
         } else {
             elem?.remove();
@@ -376,7 +376,7 @@ class CountdownElem {
         } else if (container === undefined) {
             throw new Error(`Container was not initialized: 'id=${container_id}'`)
         } else {
-            let inner_elem = this.get_elem_or_throw(inner_elem_id);
+            const inner_elem = this.get_elem_or_throw(inner_elem_id);
             this.elems.set(container_id, null);
             this.elems.set(spacer_id, null);
             this.elems.set(inner_elem_id, inner_elem);
@@ -689,7 +689,7 @@ class CountdownDisplay {
         elem.textContent = new_text;
         const new_spacer_len = Math.max(this.days_text_len - (elem.textContent?.length ?? 0), 0);
 
-        if (new_spacer_len != previous_spacer_len) {
+        if (new_spacer_len !== previous_spacer_len) {
             this.elem.get_elem_or_throw(spacer_id).textContent =
                 "0".repeat(new_spacer_len);
         }
@@ -766,8 +766,8 @@ class CountdownDisplay {
         }
     }
 
-    /** @param {CustomEvent} event */
-    #updateDays(event) {
+    /** @param {CustomEvent} _event */
+    #updateDays(_event) {
         switch (this.state.state) {
             case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
@@ -803,7 +803,7 @@ class CountdownDisplay {
             // them have one digit, though that seems to happen too rarely to really
             // care about.
             this.#updateFontSize();
-            if (this.state.state == CountdownState.Blocky) {
+            if (this.state.state === CountdownState.Blocky) {
                 this.#updateAllSpacers();
             }
         }
@@ -922,7 +922,7 @@ class DatetimeDisplay {
                 this.elem.textContent = this.datetime.toISOString();
                 break;
 
-            case DatetimeState.LocalTimezone:
+            case DatetimeState.LocalTimezone: {
                 // Kind of silly, but don't use `Date.toString()` because it
                 // includes timezone name and it might dox people.
                 const date = this.datetime.toDateString();
@@ -943,6 +943,8 @@ class DatetimeDisplay {
                     year + ' ' +
                     time_without_timezone_name;
                 break;
+            }
+
             default:
                 throw new Error("Invalid state");
         }
@@ -950,8 +952,7 @@ class DatetimeDisplay {
 
     /** This only works because we're using a mono-spaced font. */
     #updateFontSize() {
-        let text_len = String(this.elem.textContent).length;
-
+        const text_len = String(this.elem.textContent).length;
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DATETIME_VW) / text_len)}vw`;
 
         this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 9rem)`;
@@ -1029,11 +1030,11 @@ function onWebsocketMessage(event) {
         throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`)
     }
 
-    let msg_as_number = Number(msg);
+    const msg_as_number = Number(msg);
 
     if (msg_as_number < 0) {
         user_count = msg_as_number * -1;
-        let user_count_elem = document.getElementById("user-count");
+        const user_count_elem = document.getElementById("user-count");
         if (user_count_elem !== null) {
             user_count_elem.textContent = String(user_count);
         }
@@ -1067,7 +1068,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     countdown_display.start();
 
     const refresh_button_elem = document.getElementById("refresh");
-    if (refresh_button_elem === null ) {
+    if (refresh_button_elem === null) {
         throw new Error("No element with id=\"refresh\"");
     }
 
@@ -1108,12 +1109,12 @@ document.addEventListener("DOMContentLoaded", (_event) => {
 
     // Prevent 'Enter' key from repeatedly pressing button when held down
     refresh_button?.addEventListener("keyup", (event) => {
-        if (event.key == "Enter") {
+        if (event.key === "Enter") {
             websocket?.send(new Int8Array(0));
         }
     })
     refresh_button?.addEventListener("keydown", (event) => {
-        if (event.key == "Enter") {
+        if (event.key === "Enter") {
             event.preventDefault();
         }
     })
