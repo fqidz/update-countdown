@@ -631,7 +631,7 @@ class CountdownDisplay {
                 } else {
                     // Default to `CountdownState.Blocky` for phones, and
                     // `CountdownState.CompactFull` for anything else.
-                    if (matchMedia("(max-width: 600px)").matches) {
+                    if (matchMedia("only screen and (max-width: 600px)").matches) {
                         return CountdownState.Blocky;
                     } else {
                         return CountdownState.Compact;

@@ -187,17 +187,35 @@ svg {
     display: block;
 }
 
-/* Matches devices with mouse */
+/* Matches devices that are using mouse */
 /* TODO: check if this works with stylus */
 @media (hover: hover) and (pointer: fine) {
+    #countdown,
+    #datetime {
+        transition: filter 150ms ease-in;
+    }
+
+    /* On `Blocky` display, only select the actual countdown numbers and not
+     * the spacers. */
+    #countdown:hover [id^="countdown-"],
+    #countdown:hover label {
+        filter: brightness(85%);
+        transition: filter 100ms ease-out;
+    }
+    #datetime:hover {
+        filter: brightness(80%);
+        transition: filter 75ms ease-out;
+    }
+
     button#refresh>svg {
-        fill: rgb(var(--main-fg-color));
-        transition: rotate 75ms ease-in, fill 50ms linear;
+        /* fill: rgb(var(--main-fg-color)); */
+        transition: rotate 75ms ease-in, filter 50ms linear;
     }
     button#refresh:hover>svg {
-        fill: rgb(var(--dim-fg-color));
+        /* fill: rgb(var(--dim-fg-color)); */
+        filter: brightness(75%);
         rotate: 15deg;
-        transition: rotate 75ms ease-out, fill 150ms linear;
+        transition: rotate 75ms ease-out, filter 150ms linear;
     }
 }
 
