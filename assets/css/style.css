@@ -28,7 +28,6 @@
     outline-offset: 5px;
     outline-color: rgb(var(--opposite-bg-color));
     outline-style: solid;
-    border-radius: 1px;
 }
 
 * {
@@ -101,9 +100,10 @@ html {
 }
 
 #github-link {
+    padding: 5px;
     position: absolute;
-    bottom: 35px;
-    right: 35px;
+    bottom: 30px;
+    right: 30px;
 }
 
 #github-link>svg>path {

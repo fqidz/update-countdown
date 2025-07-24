@@ -6,8 +6,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- <div class="navbar"> -->
-<!-- </div> -->
 <div class="main-container">
     <div class="caption-container">
         <h1 id="update-caption" class="font-roboto font-caption dim-fg-color">
@@ -16,7 +14,6 @@
     </div>
     <div class="display-container">
         <button id="countdown" class="font-roboto-mono font-bold main-fg-color inline">
-            <!-- TODO: aria-label for the labels/"separators" -->
             <p id="countdown-days">0</p>
             <label id="days-label" for="countdown-days">:</label>
             <p id="countdown-hours">00</p>
@@ -28,13 +25,13 @@
             <p id="countdown-milliseconds">000</p>
         </button>
         <div class="datetime-container">
-            <button type="button" role="time" class="font-roboto-mono font-normal dim-fg-color" id="datetime">{{
+            <button type="button" class="font-roboto-mono font-normal dim-fg-color" id="datetime">{{
                 datetime
                 }}</button>
         </div>
     </div>
     <div class="button-refresh-container">
-        <button aria-label="Refresh datetime" type="button" id="refresh">
+        <button aria-label="refresh date time" type="button" id="refresh">
             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960"
                 width="48px" fill="#e3e3e3">
                 <path
@@ -45,11 +42,11 @@
 </div>
 <div class="bottom-container">
     <div class="user-count-container">
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+        <svg aria-label="person icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
             <path
                 d="M480-660q-29 0-49.5-20.5T410-730q0-29 20.5-49.5T480-800q29 0 49.5 20.5T550-730q0 29-20.5 49.5T480-660Zm-80 500v-200h-40v-180q0-33 23.5-56.5T440-620h80q33 0 56.5 23.5T600-540v180h-40v200H400Z" />
         </svg>
-        <p id="user-count" class="font-roboto-mono dim-fg-color">{{ user_count }}</p>
+        <p aria-label="number of users in page" id="user-count" class="font-roboto-mono dim-fg-color">{{ user_count }}</p>
     </div>
     <a id="github-link" href="https://github.com/fqidz/update-countdown/" target="_blank">
         <svg width="24px" height="24px" viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg">
