@@ -848,7 +848,7 @@ class CountdownDisplay {
         const font_size_vh = `${String((FONT_SIZE_VH_RATIO * COUNTDOWN_VH) / text_num_lines)}vh`;
 
         this.elem.get_elem_or_throw("countdown").style.fontSize =
-            `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 20rem)`;
+            `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 11rem)`;
     }
 
     /** @param {Object} new_datetime_target */
@@ -955,7 +955,7 @@ class DatetimeDisplay {
         const text_len = String(this.elem.textContent).length;
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DATETIME_VW) / text_len)}vw`;
 
-        this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 9rem)`;
+        this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 3rem)`;
     }
 
     /** @param {Date} new_datetime */
