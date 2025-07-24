@@ -1,32 +1,32 @@
 :root {
     @media (prefers-color-scheme: dark) {
-        --opposite-bg-color: 245, 245, 250;
-        --main-bg-color: 23, 23, 27;
-        --main-fg-color: 237, 236, 255;
-        --dim-fg-color: 145, 144, 163;
-        --spacer-fg-color: 29, 29, 33;
-        --github-color: 255, 255, 255;
+        --opposite-bg-color: hsl(240, 33%, 97%);
+        --main-bg-color: hsl(240, 8%, 10%);
+        --main-fg-color: hsl(243, 100%, 96%);
+        --dim-fg-color: hsl(243, 9%, 60%);
+        --spacer-fg-color: hsl(240, 6%, 12%);
+        --github-color: hsl(0, 0%, 100%);
     }
 
     @media (prefers-color-scheme: light) {
-        --opposite-bg-color: 23, 23, 27;
-        --main-bg-color: 245, 245, 250;
-        --main-fg-color: 10, 10, 15;
-        --dim-fg-color: 118, 118, 123;
-        --spacer-fg-color: 235, 235, 240;
-        --github-color: 36, 41, 47;
+        --opposite-bg-color: hsl(240, 8%, 10%);
+        --main-bg-color: hsl(240, 33%, 97%);
+        --main-fg-color: hsl(240, 20%, 5%);
+        --dim-fg-color: hsl(240, 2%, 47%);
+        --spacer-fg-color: hsl(240, 14%, 93%);
+        --github-color: hsl(213, 13%, 16%);
     }
 }
 
 ::selection {
-    color: rgb(var(--main-bg-color));
-    background: rgb(var(--opposite-bg-color));
+    color: var(--main-bg-color);
+    background: var(--opposite-bg-color);
 }
 
 *:focus-visible {
     outline-width: 2px;
     outline-offset: 5px;
-    outline-color: rgb(var(--opposite-bg-color));
+    outline-color: var(--opposite-bg-color);
     outline-style: solid;
 }
 
@@ -37,16 +37,16 @@
 }
 
 .main-fg-color {
-    color: rgb(var(--main-fg-color));
+    color: var(--main-fg-color);
 }
 
 .dim-fg-color {
-    color: rgb(var(--dim-fg-color));
+    color: var(--dim-fg-color);
 }
 
 
 html {
-    background-color: rgb(var(--main-bg-color));
+    background-color: var(--main-bg-color);
 }
 
 .font-roboto-mono {
@@ -97,17 +97,6 @@ html {
 
 .navbar {
     display: flex;
-}
-
-#github-link {
-    padding: 5px;
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-}
-
-#github-link>svg>path {
-    fill: rgb(var(--github-color));
 }
 
 .main-container {
@@ -164,7 +153,7 @@ html {
 }
 
 .spacer {
-    color: rgb(var(--spacer-fg-color));
+    color: var(--spacer-fg-color);
 }
 
 .button-refresh-container {
@@ -237,22 +226,32 @@ svg {
 }
 
 .user-count-container>svg {
-    fill: rgb(var(--dim-fg-color));
+    fill: var(--dim-fg-color);
 }
 
 #user-count {
     padding-top: 1px;
 }
 
+#github-link {
+    padding: 5px;
+    position: absolute;
+    bottom: 35px;
+    right: 40px;
+}
+
+#github-link>svg>path {
+    fill: var(--github-color);
+}
 
 @keyframes refresh {
     from {
-        fill: rgb(var(--main-fg-color));
+        fill: var(--main-fg-color);
         transform: rotate(0deg);
     }
 
     to {
-        fill: rgb(var(--dim-fg-color));
+        fill: var(--dim-fg-color);
         transform: rotate(20deg);
     }
 
