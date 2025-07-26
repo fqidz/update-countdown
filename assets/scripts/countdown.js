@@ -51,6 +51,8 @@ const COUNTDOWN_VH = 50;
 
 const DATETIME_VW = 30;
 
+const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
+
 /** Enums for different countdown display states */
 const CountdownState = Object.freeze({
     Compact: 0,
@@ -1005,6 +1007,113 @@ function disconnectWebsocket() {
     websocket = null;
 }
 
+class RefreshButton {
+    /** @type {HTMLElement} */
+    elem;
+    /** @type {SVGElement} */
+    svg_elem;
+    /** @type {number} */
+    rotation;
+    /** @type {number | null} */
+    #reset_timeout_id;
+
+    /**
+     * @param {HTMLElement} elem
+     * @param {SVGElement} svg_elem
+     */
+    constructor(elem, svg_elem) {
+        this.elem = elem;
+        this.svg_elem = svg_elem;
+        this.rotation = 0;
+    }
+
+    /** @param {MouseEvent} _event */
+    #onClick(_event) {
+        if (is_websocket_open) {
+            // Increment datetime
+            websocket?.send(new Int8Array(0));
+
+            this.#animateClickRotation();
+        }
+        // TODO: disable button & make it red if websocket is closed
+    }
+
+    #animateClickRotation() {
+        // This allows us to continue from the current rotation when it's in
+        // the middle of animating back to 0 rotation.
+        if (this.rotation === 0) {
+            const rotation_deg = Number(
+                window.getComputedStyle(this.svg_elem).rotate.slice(0, -3)
+            ) || 0;
+            if (rotation_deg !== 0) {
+                this.rotation = rotation_deg * Math.PI / 180;
+            }
+        }
+
+        // 55deg = 0.9599310885968813rad
+        this.rotation = Math.max(0, this.rotation + 0.9599310885968813);
+
+        const keyframe = rotationKeyframe(this.rotation);
+        const keyframe_timing = {
+            duration: REFRESH_BUTTON_TIMEOUT_DURATION,
+            easing: "linear(0, 0.679 18%, 0.895 27.6%, 1.037 37.8%, 1.104 47.4%, 1.12 58%, 1)",
+            fill: /** @type {FillMode} */ ("forwards"),
+        }
+        this.svg_elem.animate(keyframe, keyframe_timing);
+
+        if (this.#reset_timeout_id !== null) {
+            clearTimeout(this.#reset_timeout_id)
+        }
+        this.#reset_timeout_id = setInterval(this.#resetRotation.bind(this), REFRESH_BUTTON_TIMEOUT_DURATION);
+    }
+
+    #resetRotation() {
+        if (this.rotation === 0) {
+            return;
+        }
+        const duration = Math.ceil(Math.pow(this.rotation, 0.75) * 100 + 50);
+
+        this.rotation = 0;
+        const keyframe = rotationKeyframe(0);
+        const keyframe_timing = {
+            duration,
+            easing: "cubic-bezier(.9,-0.01,.42,1.58)",
+            fill: /** @type {FillMode} */ ("forwards"),
+        }
+        this.svg_elem.animate(keyframe, keyframe_timing);
+
+        if (this.#reset_timeout_id === null) {
+            throw Error("timeout id is null");
+        }
+        clearTimeout(this.#reset_timeout_id);
+        this.#reset_timeout_id = null;
+    }
+
+    build() {
+        this.elem.addEventListener("click", this.#onClick.bind(this));
+
+        // Prevent 'Enter' key from repeatedly pressing button when held down
+        this.elem.addEventListener("keyup", (event) => {
+            if (event.key === "Enter") {
+                websocket?.send(new Int8Array(0));
+            }
+        })
+        this.elem.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+            }
+        })
+    }
+}
+
+/**
+ * @param {number} rad
+ * @returns {[{rotate: string}]}
+ */
+function rotationKeyframe(rad) {
+    return [{ rotate: `${rad}rad` }];
+}
+
 document.addEventListener("visibilitychange", () => {
     // When webpage isn't visible, disconnect websocket to save on server
     // resources and also pause countdown from ticking down.
@@ -1045,7 +1154,6 @@ function onWebsocketMessage(event) {
     }
 }
 
-
 /** @type {CountdownDisplay} */
 let countdown_display;
 
@@ -1072,29 +1180,13 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         throw new Error("No element with id=\"refresh\"");
     }
 
-    refresh_button_elem.addEventListener("click", (_event) => {
-        if (is_websocket_open) {
-            // Increment datetime
-            websocket?.send(new Int8Array(0));
-        }
-    });
+    const refresh_svg_elem = /** @type {SVGElement} */(document.querySelector("#refresh>svg"));
+    if (refresh_svg_elem === null) {
+        throw new Error("No svg element inside id=\"refresh\"");
+    }
 
-    // let is_touch_device = (matchMedia("(max-width: 600px)").matches);
-
-    // refresh_button_elem.addEventListener("pointerup", (event) => {
-    //     let child_svg = refresh_button_elem.children[0];
-    //     if (event.pointerType === "mouse") {
-    //         /** @type {HTMLElement} */(child_svg).classList.add("animatejump");
-    //         setTimeout(() => {
-    //             /** @type {HTMLElement} */(child_svg).classList.remove("animatejump");
-    //         }, 200)
-    //     } else {
-    //         /** @type {HTMLElement} */(child_svg).classList.add("animate");
-    //         setTimeout(() => {
-    //             /** @type {HTMLElement} */(child_svg).classList.remove("animate");
-    //         }, 200)
-    //     }
-    // });
+    const refresh_button = new RefreshButton(refresh_button_elem, refresh_svg_elem);
+    refresh_button.build();
 
     const countdown_elem = document.getElementById("countdown");
     countdown_elem?.addEventListener("click", () => {
@@ -1105,17 +1197,4 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         datetime_display.cycleState();
     });
 
-    const refresh_button = document.getElementById("refresh");
-
-    // Prevent 'Enter' key from repeatedly pressing button when held down
-    refresh_button?.addEventListener("keyup", (event) => {
-        if (event.key === "Enter") {
-            websocket?.send(new Int8Array(0));
-        }
-    })
-    refresh_button?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-        }
-    })
 });

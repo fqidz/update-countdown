@@ -44,7 +44,6 @@
     color: var(--dim-fg-color);
 }
 
-
 html {
     background-color: var(--main-bg-color);
 }
@@ -171,8 +170,7 @@ svg {
     display: block;
 }
 
-/* Matches devices that are using mouse */
-/* TODO: check if this works with stylus */
+/* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
 
     #countdown,
@@ -193,16 +191,15 @@ svg {
         transition: filter 75ms ease-out;
     }
 
-    button#refresh>svg {
-        /* fill: rgb(var(--main-fg-color)); */
-        transition: rotate 75ms ease-in, filter 50ms linear;
-    }
+    /* button#refresh>svg { */
+    /*     transition: rotate 75ms ease-in, filter 50ms linear; */
+    /* } */
 
     button#refresh:hover>svg {
-        /* fill: rgb(var(--dim-fg-color)); */
         filter: brightness(75%);
-        rotate: 15deg;
-        transition: rotate 75ms ease-out, filter 150ms linear;
+        transition: filter 50ms linear;
+        /* rotate: 15deg; */
+        /* transition: rotate 75ms ease-out, filter 150ms linear; */
     }
 }
 
@@ -235,43 +232,3 @@ svg {
 #github-link>svg>path {
     fill: var(--github-color);
 }
-
-@keyframes refresh {
-    from {
-        fill: var(--main-fg-color);
-        transform: rotate(0deg);
-    }
-
-    to {
-        fill: var(--dim-fg-color);
-        transform: rotate(20deg);
-    }
-
-    /* 20%, 80% { */
-    /*     fill: #505050; */
-    /*     transform: rotate(20deg); */
-    /* } */
-}
-
-@keyframes refreshjump {
-
-    0%,
-    100% {
-        transform: translateY(0px) rotate(20deg);
-    }
-
-    40%,
-    60% {
-        transform: translateY(-10px) rotate(20deg);
-    }
-}
-
-/* svg.animate { */
-/*     animation: */
-/*         200ms linear refresh */
-/* } */
-/**/
-/* svg.animatejump { */
-/*     animation: */
-/*         200ms ease-in-out refreshjump */
-/* } */
