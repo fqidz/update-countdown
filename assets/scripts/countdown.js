@@ -978,33 +978,98 @@ class DatetimeDisplay {
     }
 }
 
-/** @type {Object | null} */
-let datetime = null;
+class CustomWebSocket {
+    /** @type {WebSocket | null} */
+    #websocket;
+    /** @type {number | null} */
+    #disconnect_timeout_id;
+    /** @type {string} */
+    url
 
-let is_websocket_open = false;
-let is_document_visible = true;
-
-/** @type {WebSocket | null} */
-let websocket = connectWebsocket();
-
-/** @returns {WebSocket} */
-function connectWebsocket() {
-    const websocket = new WebSocket("battlebit/websocket");
-    websocket.binaryType = "arraybuffer";
-    websocket.addEventListener("message", onWebsocketMessage);
-    is_websocket_open = true;
-
-    return websocket;
-}
-
-function disconnectWebsocket() {
-    if (websocket === null) {
-        throw new Error("Tried closing websocket but is null");
+    /** @param {string} url */
+    constructor(url) {
+        this.url = url;
+        this.#disconnect_timeout_id = null;
+        this.#websocket = null;
+        this.connect();
     }
-    is_websocket_open = false;
-    websocket.removeEventListener("message", onWebsocketMessage);
-    websocket.close();
-    websocket = null;
+
+    connect() {
+        this.#websocket = new WebSocket(this.url);
+        this.#websocket.addEventListener("message", this.#onMessage.bind(this));
+        this.#websocket.binaryType = "arraybuffer";
+    }
+
+    reconnect() {
+        if (this.#websocket !== null && !this.isOpen()) {
+            this.disconnect();
+        } else if (this.#disconnect_timeout_id !== null) {
+            // Cancel disconnecting
+            clearTimeout(this.#disconnect_timeout_id);
+            return;
+        }
+        this.connect();
+    }
+
+    disconnect() {
+        if (this.#websocket === null) {
+            throw new Error("Tried closing websocket but is null");
+        }
+        this.#websocket?.close();
+        this.#websocket?.removeEventListener("message", this.#onMessage);
+        this.#websocket = null;
+    }
+
+    /** @param {number} milliseconds */
+    delayedDisconnect(milliseconds) {
+        if (this.#disconnect_timeout_id !== null) {
+            clearTimeout(this.#disconnect_timeout_id);
+        }
+        this.#disconnect_timeout_id = setTimeout(() => {
+            this.disconnect();
+
+            if (this.#disconnect_timeout_id !== null) {
+                clearTimeout(this.#disconnect_timeout_id);
+            }
+            this.#disconnect_timeout_id = null;
+        }, milliseconds);
+    }
+
+    /** @param {MessageEvent<any>} event */
+    #onMessage(event) {
+        const msg = new DataView(event.data).getBigInt64(0, false);
+
+        if (msg > Number.MAX_SAFE_INTEGER) {
+            throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${msg}`)
+        } else if (msg < Number.MIN_SAFE_INTEGER) {
+            throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`)
+        }
+
+        const msg_as_number = Number(msg);
+
+        if (Number.isNaN(msg_as_number)) {
+            throw Error("Unexpected WebSocket message recieved");
+        } else if (msg_as_number < 0) {
+            user_count = msg_as_number * -1;
+            const user_count_elem = document.getElementById("user-count");
+            if (user_count_elem !== null) {
+                user_count_elem.textContent = String(user_count);
+            }
+        } else {
+            datetime = new Date(msg_as_number * 1000);
+            datetime_display.updateDatetime(datetime);
+            countdown_display.updateDatetimeTarget(datetime);
+        }
+    }
+
+    incrementDatetime() {
+        this.#websocket?.send(new Int8Array(0));
+    }
+
+    /** @returns {boolean} */
+    isOpen() {
+        return this.#websocket?.readyState === WebSocket.OPEN;
+    }
 }
 
 class RefreshButton {
@@ -1029,10 +1094,8 @@ class RefreshButton {
 
     /** @param {MouseEvent} _event */
     #onClick(_event) {
-        if (is_websocket_open) {
-            // Increment datetime
-            websocket?.send(new Int8Array(0));
-
+        if (websocket.isOpen()) {
+            websocket.incrementDatetime();
             this.#animateClickRotation();
         }
         // TODO: disable button & make it red if websocket is closed
@@ -1095,7 +1158,7 @@ class RefreshButton {
         // Prevent 'Enter' key from repeatedly pressing button when held down
         this.elem.addEventListener("keyup", (event) => {
             if (event.key === "Enter") {
-                websocket?.send(new Int8Array(0));
+                websocket.incrementDatetime();
             }
         })
         this.elem.addEventListener("keydown", (event) => {
@@ -1114,51 +1177,61 @@ function rotationKeyframe(rad) {
     return [{ rotate: `${rad}rad` }];
 }
 
+let browser_supports_inactive_tab_timeout = true;
+
+/**
+  * Check if the browser allows timeouts to work after tab becomes inactive,
+  * because different browsers have different behaviour and there is no easy
+  * way to check if a browser supports it. This is not that accurate.
+  *
+  * https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#reasons_for_delays_longer_than_specified
+  * */
+function checkBrowserSupportsInactiveTabTimeout() {
+    const time_start = new Date();
+    setTimeout(() => {
+        const time_finished = new Date();
+        const actual_time_difference = time_finished.getTime() - time_start.getTime();
+        if (document.hidden) {
+            if (actual_time_difference >= 900 && actual_time_difference <= 1700) {
+                browser_supports_inactive_tab_timeout = true;
+            } else {
+                browser_supports_inactive_tab_timeout = false;
+            }
+        }
+    }, 1000);
+}
+
 document.addEventListener("visibilitychange", () => {
     // When webpage isn't visible, disconnect websocket to save on server
-    // resources and also pause countdown from ticking down.
+    // resources, and also pause countdown from ticking down.
     is_document_visible = !document.hidden;
-    if (is_document_visible === true) {
-        websocket = connectWebsocket();
+    if (is_document_visible) {
+        websocket.reconnect();
         countdown_display.play();
-    } else if (is_document_visible === false) {
-        disconnectWebsocket();
+    } else {
+        // Check everytime because there's a decent chance it's a false
+        // positive.
+        checkBrowserSupportsInactiveTabTimeout();
+        if (browser_supports_inactive_tab_timeout) {
+            websocket.delayedDisconnect(3000);
+        } else {
+            websocket.disconnect();
+        }
         countdown_display.pause();
     }
-});
+}, false);
+
+/** @type {Date | null} */
+let datetime = null;
+/** @type {CountdownDisplay} */
+let countdown_display;
+/** @type {DatetimeDisplay} */
+let datetime_display;
 
 let user_count = 1;
 
-/** @param {MessageEvent} event */
-function onWebsocketMessage(event) {
-    const msg = new DataView(event.data).getBigInt64(0, false);
-
-    if (msg > Number.MAX_SAFE_INTEGER) {
-        throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${msg}`)
-    } else if (msg < Number.MIN_SAFE_INTEGER) {
-        throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`)
-    }
-
-    const msg_as_number = Number(msg);
-
-    if (msg_as_number < 0) {
-        user_count = msg_as_number * -1;
-        const user_count_elem = document.getElementById("user-count");
-        if (user_count_elem !== null) {
-            user_count_elem.textContent = String(user_count);
-        }
-    } else {
-        datetime = new Date(msg_as_number * 1000);
-        datetime_display.updateDatetime(datetime);
-        countdown_display.updateDatetimeTarget(datetime);
-    }
-}
-
-/** @type {CountdownDisplay} */
-let countdown_display;
-
-/** @type {DatetimeDisplay} */
-let datetime_display;
+let is_document_visible = false;
+const websocket = new CustomWebSocket("battlebit/websocket");
 
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
