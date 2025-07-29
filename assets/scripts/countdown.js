@@ -1177,7 +1177,7 @@ function rotationKeyframe(rad) {
     return [{ rotate: `${rad}rad` }];
 }
 
-let browser_supports_inactive_tab_timeout = true;
+let browser_supports_inactive_tab_timeout = false;
 
 /**
   * Check if the browser allows timeouts to work after tab becomes inactive,
