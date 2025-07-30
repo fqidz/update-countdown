@@ -98,12 +98,41 @@ html {
 .wrapper {
     min-height: 100vh;
     min-height: 100svh;
+    max-width: 1920px;
+    margin: auto;
+    /* margin-right: auto; */
+    /* margin-left: auto; */
     display: grid;
     grid-template-rows: auto 1fr auto;
 }
 
 .navbar {
+    padding: clamp(0.5em, 3vw, 2em);
+    /* top: clamp(0.5em, 3vw, 2em); */
+    /* right: clamp(0.5em, 3vw, 2em); */
+    justify-content: end;
     display: flex;
+    align-items: center;
+    gap: min(0.8em, 1.5vw);
+}
+
+/* .navbar-chevron, */
+/* .navbar-hamburger { */
+/*     display: flex; */
+/* } */
+
+.navbar-chevron svg,
+.navbar-hamburger svg {
+    fill: var(--dim-fg-color);
+}
+
+.info-button {
+    color: var(--main-fg-color);
+    font-size: 0.9em;
+}
+
+.nav-spacer {
+    color: var(--dim-fg-color);
 }
 
 .content {
