@@ -1,32 +1,71 @@
 :root {
+    --gray-100: hsl(240, 9.8%, 8%);
+    --gray-150: hsl(240, 9%, 10%);
+    --gray-300: hsl(240, 9%, 25%);
+    --gray-500: hsl(240, 10%, 46%);
+    --gray-600: hsl(240, 10%, 52%);
+    --gray-700: hsl(240, 10%, 68%);
+
+    --white-50: hsl(240, 100%, 96%);
+    --white-100: hsl(240, 20%, 92%);
+    --white-150: hsl(240, 20%, 89%);
+    --white-300: hsl(240, 19%, 82%);
+    --white-500: hsl(240, 20%, 71%);
+    --white-600: hsl(240, 20%, 65%);
+    --white-700: hsl(240, 20%, 60%);
+
     @media (prefers-color-scheme: dark) {
-        --opposite-bg-color: hsl(240, 33%, 97%);
-        --main-bg-color: hsl(240, 8%, 10%);
-        --main-fg-color: hsl(243, 100%, 96%);
-        --dim-fg-color: hsl(243, 9%, 60%);
-        --spacer-fg-color: hsl(240, 6%, 12%);
-        --github-color: hsl(0, 0%, 100%);
+        /* --opposite-bg-color: hsl(240, 33%, 97%); */
+        /* --main-bg-color: hsl(240, 8%, 10%); */
+        /* --main-fg-color: hsl(243, 100%, 96%); */
+        /* --dim-fg-color: hsl(243, 9%, 60%); */
+        /* --spacer-fg-color: hsl(240, 6%, 12%); */
+        /* --github-color: hsl(0, 0%, 100%); */
     }
 
     @media (prefers-color-scheme: light) {
-        --opposite-bg-color: hsl(240, 8%, 10%);
-        --main-bg-color: hsl(240, 33%, 97%);
-        --main-fg-color: hsl(240, 20%, 5%);
-        --dim-fg-color: hsl(240, 2%, 47%);
-        --spacer-fg-color: hsl(240, 14%, 93%);
-        --github-color: hsl(213, 13%, 16%);
+        /* --opposite-bg-color: hsl(240, 8%, 10%); */
+        /* --main-bg-color: hsl(240, 33%, 97%); */
+        /* --main-fg-color: hsl(240, 20%, 5%); */
+        /* --dim-fg-color: hsl(240, 2%, 47%); */
+        /* --spacer-fg-color: hsl(240, 14%, 93%); */
+        /* --github-color: hsl(213, 13%, 16%); */
     }
 }
 
+[data-theme="dark"] {
+    --bg-100: var(--gray-100);
+    --bg-150: var(--gray-150);
+    --bg-300: var(--gray-300);
+    --bg-500: var(--gray-500);
+    --bg-600: var(--gray-600);
+    --bg-700: var(--gray-700);
+    --fg-50: var(--white-50);
+    --bg-opposite: var(--white-100);
+    --github-color: hsl(0, 0%, 100%);
+}
+
+[data-theme="light"] {
+    --bg-100: var(--white-100);
+    --bg-150: var(--white-150);
+    --bg-300: var(--white-300);
+    --bg-500: var(--white-500);
+    --bg-600: var(--white-600);
+    --bg-700: var(--white-700);
+    --fg-100: var(--gray-100);
+    --bg-opposite: var(--gray-100);
+    --github-color: hsl(213, 13%, 16%);
+}
+
 ::selection {
-    color: var(--main-bg-color);
-    background: var(--opposite-bg-color);
+    color: var(--bg-100);
+    background: var(--bg-opposite);
 }
 
 *:focus-visible {
     outline-width: 2px;
     outline-offset: 5px;
-    outline-color: var(--opposite-bg-color);
+    outline-color: var(--bg-opposite);
     outline-style: solid;
 }
 
@@ -37,15 +76,15 @@
 }
 
 .main-fg-color {
-    color: var(--main-fg-color);
+    color: var(--fg-50);
 }
 
 .dim-fg-color {
-    color: var(--dim-fg-color);
+    color: var(--bg-600);
 }
 
-html {
-    background-color: var(--main-bg-color);
+body {
+    background-color: var(--bg-100);
     overflow-y: scroll;
 }
 
@@ -106,33 +145,69 @@ html {
     grid-template-rows: auto 1fr auto;
 }
 
-.navbar {
-    padding: clamp(0.5em, 3vw, 2em);
-    /* top: clamp(0.5em, 3vw, 2em); */
-    /* right: clamp(0.5em, 3vw, 2em); */
+.primary-header {
+    display: flex;
+    padding: clamp(1em, 3vw, 2em);
+    padding-bottom: 1.5em;
+    justify-content: end;
+    gap: clamp(1.2em, 2vw, 1.5em);
+}
+
+#navbar {
+    list-style-type: none;
     justify-content: end;
     display: flex;
     align-items: center;
-    gap: min(0.8em, 1.5vw);
+    gap: clamp(1.2em, 2vw, 1.5em);
 }
 
-/* .navbar-chevron, */
-/* .navbar-hamburger { */
-/*     display: flex; */
+.navbar-toggle-button[aria-expanded="true"]>.close {
+    display: none;
+}
+
+.navbar-toggle-button[aria-expanded="false"]>.open {
+    display: none;
+}
+
+/* @media (min-width: 600px){ */
+/*     #navbar-button { */
+/*         display: none; */
+/*     } */
 /* } */
 
-.navbar-chevron svg,
-.navbar-hamburger svg {
-    fill: var(--dim-fg-color);
+.navbar-toggle-button svg {
+    fill: var(--bg-600);
 }
 
 .info-button {
-    color: var(--main-fg-color);
-    font-size: 0.9em;
+    color: var(--fg-50);
+    font-size: 1em;
 }
 
 .nav-spacer {
-    color: var(--dim-fg-color);
+    user-select: none;
+    color: var(--bg-300);
+}
+
+#github-link {
+    padding: 6px;
+    display: block;
+}
+
+#github-link>svg>path {
+    fill: var(--github-color);
+}
+
+.theme-toggle>svg {
+    fill: var(--fg-50);
+}
+
+[data-theme="light"] .theme-toggle>.light {
+    display: none;
+}
+
+[data-theme="dark"] .theme-toggle>.dark {
+    display: none;
 }
 
 .content {
@@ -185,7 +260,7 @@ html {
 }
 
 .spacer {
-    color: var(--spacer-fg-color);
+    color: var(--bg-150);
 }
 
 .button-refresh-container {
@@ -204,9 +279,11 @@ button {
 }
 
 /* Stop the parent from being a few pixels bigger than the actual svg */
-svg {
+svg, button {
     display: block;
 }
+
+
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
@@ -247,24 +324,15 @@ svg {
 
 .bottom-container {
     padding: 2em;
+    padding-top: 0.5em;
     display: flex;
 }
 
 .bottom-container>svg {
-    fill: var(--dim-fg-color);
+    fill: var(--bg-600);
 }
 
 #user-count {
     padding-top: 1px;
 }
 
-/* #github-link { */
-/*     padding: 6px; */
-/*     position: absolute; */
-/*     bottom: 34px; */
-/*     right: 39px; */
-/* } */
-
-#github-link>svg>path {
-    fill: var(--github-color);
-}
