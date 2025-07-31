@@ -1245,8 +1245,48 @@ let user_count = 1;
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");
 
+/** @param {string} theme */
+function setTheme(theme) {
+    if (theme === "dark") {
+        document.body.dataset.theme = "dark";
+    } else if (theme === "light") {
+        document.body.dataset.theme = "light";
+    } else {
+        throw new Error("Invalid theme");
+    }
+    localStorage.setItem("theme", theme);
+}
+
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
+    // theme
+    let theme = localStorage.getItem("theme");
+    if (theme === null) {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ?
+            "dark" : "light";
+    }
+    setTheme(theme);
+
+    const theme_toggle_button_elem = document.getElementById("theme-toggle");
+    if (theme_toggle_button_elem === null) {
+        throw new Error("No theme toggle button with id=\"theme-toggle\"")
+    }
+
+    theme_toggle_button_elem.addEventListener("click", () => {
+        if (theme === "dark") {
+            theme = "light";
+        } else if (theme === "light") {
+            theme = "dark";
+        } else {
+            throw new Error("assert can only be \"light\" or \"dark\"");
+        }
+        setTheme(theme);
+    });
+
+    // navbar
+
+
+    // countdown
     const datetime_elem = document.getElementById("datetime");
 
     if (datetime_elem === null) {
