@@ -54,7 +54,7 @@
     --bg-700: var(--white-700);
     --fg-100: var(--gray-100);
     --bg-opposite: var(--gray-100);
-    --github-color: hsl(213, 13%, 16%);
+    --github-color: hsl(212.7,13.3%,16.3%);
 }
 
 ::selection {
