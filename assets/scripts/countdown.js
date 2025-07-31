@@ -49,14 +49,14 @@ const FONT_SIZE_VH_RATIO = 1.25;
 const COUNTDOWN_VW = 80;
 const COUNTDOWN_VH = 50;
 
-const DATETIME_VW = 30;
+const DATETIME_VW = 40;
 
 const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
 
 /** Enums for different countdown display states */
 const CountdownState = Object.freeze({
-    Compact: 0,
-    CompactNoMillis: 1,
+    CompactNoMillis: 0,
+    Compact: 1,
     Blocky: 2,
 });
 
@@ -388,6 +388,21 @@ class CountdownElem {
     /** @param {number} state CountdownState */
     cycle_to_state(state) {
         switch (state) {
+            case CountdownState.CompactNoMillis:
+                this.#remove_elem("seconds-label");
+                this.#remove_elem("countdown-milliseconds");
+
+                this.#restore_container("hours-container", "hours-spacer", "countdown-hours");
+                this.#restore_container("minutes-container", "minutes-spacer", "countdown-minutes");
+                this.#restore_container("seconds-container", "seconds-spacer", "countdown-seconds");
+
+                this.get_elem_or_throw("days-label").textContent = ":";
+                this.get_elem_or_throw("hours-label").textContent = ":";
+                this.get_elem_or_throw("minutes-label").textContent = ":";
+
+                this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
+                break;
+
             case CountdownState.Compact:
                 this.#create_and_append_label_if_null("seconds-label");
                 this.#create_and_append_element_if_null("countdown-milliseconds", "p");
@@ -400,13 +415,6 @@ class CountdownElem {
                 this.get_elem_or_throw("hours-label").textContent = ":";
                 this.get_elem_or_throw("minutes-label").textContent = ":";
                 this.get_elem_or_throw("seconds-label").textContent = ".";
-
-                this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
-                break;
-
-            case CountdownState.CompactNoMillis:
-                this.#remove_elem("seconds-label");
-                this.#remove_elem("countdown-milliseconds");
 
                 this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
                 break;
@@ -634,7 +642,7 @@ class CountdownDisplay {
                     if (matchMedia("only screen and (max-width: 600px)").matches) {
                         return CountdownState.Blocky;
                     } else {
-                        return CountdownState.Compact;
+                        return CountdownState.CompactNoMillis;
                     }
                 }
             })(),
@@ -715,8 +723,8 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateSeconds(event) {
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 this.elem.get_elem_or_throw("countdown-seconds").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
@@ -733,8 +741,8 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateMinutes(event) {
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 this.elem.get_elem_or_throw("countdown-minutes").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
@@ -751,8 +759,8 @@ class CountdownDisplay {
     /** @param {CustomEvent} event */
     #updateHours(event) {
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 this.elem.get_elem_or_throw("countdown-hours").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
@@ -769,8 +777,8 @@ class CountdownDisplay {
     /** @param {CustomEvent} _event */
     #updateDays(_event) {
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 break;
 
             case CountdownState.Blocky:
@@ -786,8 +794,8 @@ class CountdownDisplay {
         const days_elem = this.elem.get_elem_or_throw("countdown-days");
         const previous_len = days_elem.textContent?.length;
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
             case CountdownState.Blocky:
                 days_elem.textContent = String(event.detail);
                 break;
@@ -822,8 +830,8 @@ class CountdownDisplay {
         let text_num_lines = null;
 
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 text_len = String(this.elem.get_elem_or_throw("countdown").textContent).length;
                 text_num_lines = 1;
                 break;
@@ -849,8 +857,8 @@ class CountdownDisplay {
         const countdown_elem = this.elem.get_elem_or_throw("countdown");
 
         switch (this.state.state) {
-            case CountdownState.Compact:
             case CountdownState.CompactNoMillis:
+            case CountdownState.Compact:
                 countdown_elem.style.fontSize =
                     `clamp(1.5rem, min(${font_size_vw}, ${font_size_vh}), 8rem)`;
                 break;
@@ -969,7 +977,7 @@ class DatetimeDisplay {
         const text_len = String(this.elem.textContent).length;
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DATETIME_VW) / text_len)}vw`;
 
-        this.elem.style.fontSize = `clamp(0.9rem, min(${font_size_vw}), 2rem)`;
+        this.elem.style.fontSize = `clamp(0.9rem, ${font_size_vw}, 2rem)`;
     }
 
     /** @param {Date} new_datetime */
