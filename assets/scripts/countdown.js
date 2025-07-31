@@ -287,14 +287,12 @@ class CountdownElem {
 
     /**
      * @param {string} label_id
-     * @param {string} html_for_id
      **/
-    #create_and_append_label_if_null(label_id, html_for_id) {
+    #create_and_append_label_if_null(label_id) {
         let label = this.elems.get(label_id);
         if (label === null) {
-            label = document.createElement("label");
+            label = document.createElement("span");
             label.id = label_id;
-            /** @type {HTMLLabelElement} */(label).htmlFor = html_for_id;
 
             this.#append_to_root_elem(label);
         } else if (label === undefined) {
@@ -391,7 +389,7 @@ class CountdownElem {
     cycle_to_state(state) {
         switch (state) {
             case CountdownState.Compact:
-                this.#create_and_append_label_if_null("seconds-label", "countdown-seconds");
+                this.#create_and_append_label_if_null("seconds-label");
                 this.#create_and_append_element_if_null("countdown-milliseconds", "p");
 
                 this.#restore_container("hours-container", "hours-spacer", "countdown-hours");
@@ -414,7 +412,7 @@ class CountdownElem {
                 break;
 
             case CountdownState.Blocky:
-                this.#create_and_append_label_if_null("seconds-label", "countdown-seconds");
+                this.#create_and_append_label_if_null("seconds-label");
                 this.#remove_elem("countdown-milliseconds");
 
                 this.get_elem_or_throw("days-label").textContent = "D";

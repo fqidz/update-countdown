@@ -276,6 +276,7 @@ body {
 
 button {
     background-color: transparent;
+    cursor: pointer;
 }
 
 /* Stop the parent from being a few pixels bigger than the actual svg */
@@ -284,19 +285,19 @@ svg, button {
 }
 
 
-
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
 
     #countdown,
-    #datetime {
+    #datetime,
+    #refresh {
         transition: filter 150ms ease-in;
     }
 
     /* On `Blocky` display, only select the actual countdown numbers and not
      * the spacers. */
     #countdown:hover [id^="countdown-"],
-    #countdown:hover label {
+    #countdown:hover span {
         filter: brightness(85%);
         transition: filter 75ms ease-out;
     }
@@ -306,11 +307,12 @@ svg, button {
         transition: filter 75ms ease-out;
     }
 
+
     /* button#refresh>svg { */
     /*     transition: rotate 75ms ease-in, filter 50ms linear; */
     /* } */
 
-    button#refresh:hover>svg {
+    #refresh:hover>svg {
         filter: brightness(75%);
         transition: filter 50ms linear;
         /* rotate: 15deg; */
