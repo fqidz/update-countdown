@@ -1240,7 +1240,8 @@ let countdown_display;
 /** @type {DatetimeDisplay} */
 let datetime_display;
 
-let user_count = 1;
+/** @type {number | null} */
+let user_count = null;
 
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");

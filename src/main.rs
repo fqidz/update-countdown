@@ -31,7 +31,6 @@ use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::Tim
 struct CountdownTemplate {
     title: String,
     datetime: i64,
-    user_count: u32,
 }
 
 // TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so. Also
@@ -274,11 +273,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let mut datetime_write = state.datetimes.write().await;
     let datetime = datetime_write.get_mut("battlebit").unwrap();
-    let user_count = state
-        .user_count
-        .get("battlebit")
-        .unwrap()
-        .load(Ordering::Relaxed);
 
     let mut rng = rand::rng();
     let secs = rng.random_range(SECS_INCREMENT_RANGE);
@@ -291,7 +285,6 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
         datetime: datetime.timestamp(),
-        user_count,
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
