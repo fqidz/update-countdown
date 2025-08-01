@@ -12,26 +12,8 @@
     --white-150: hsl(240, 20%, 89%);
     --white-300: hsl(240, 19%, 82%);
     --white-500: hsl(240, 20%, 71%);
-    --white-600: hsl(240, 20%, 65%);
+    --white-600: hsl(240, 15%, 50%);
     --white-700: hsl(240, 20%, 60%);
-
-    @media (prefers-color-scheme: dark) {
-        /* --opposite-bg-color: hsl(240, 33%, 97%); */
-        /* --main-bg-color: hsl(240, 8%, 10%); */
-        /* --main-fg-color: hsl(243, 100%, 96%); */
-        /* --dim-fg-color: hsl(243, 9%, 60%); */
-        /* --spacer-fg-color: hsl(240, 6%, 12%); */
-        /* --github-color: hsl(0, 0%, 100%); */
-    }
-
-    @media (prefers-color-scheme: light) {
-        /* --opposite-bg-color: hsl(240, 8%, 10%); */
-        /* --main-bg-color: hsl(240, 33%, 97%); */
-        /* --main-fg-color: hsl(240, 20%, 5%); */
-        /* --dim-fg-color: hsl(240, 2%, 47%); */
-        /* --spacer-fg-color: hsl(240, 14%, 93%); */
-        /* --github-color: hsl(213, 13%, 16%); */
-    }
 }
 
 [data-theme="dark"] {
@@ -55,7 +37,7 @@
     --bg-700: var(--white-700);
     --fg-50: var(--gray-50);
     --bg-opposite: var(--gray-100);
-    --github-color: hsl(212.7,13.3%,16.3%);
+    --github-color: hsl(212.7, 13.3%, 16.3%);
 }
 
 ::selection {
@@ -76,17 +58,27 @@
     border: none;
 }
 
+button {
+    background-color: transparent;
+    cursor: pointer;
+}
+
+/* Stop the parent from being a few pixels bigger than the actual svg */
+svg, button {
+    display: block;
+}
+
+body {
+    background-color: var(--bg-100);
+    overflow-y: scroll;
+}
+
 .main-fg-color {
     color: var(--fg-50);
 }
 
 .dim-fg-color {
     color: var(--bg-600);
-}
-
-body {
-    background-color: var(--bg-100);
-    overflow-y: scroll;
 }
 
 .font-roboto-mono {
@@ -140,8 +132,6 @@ body {
     min-height: 100svh;
     max-width: 1920px;
     margin: auto;
-    /* margin-right: auto; */
-    /* margin-left: auto; */
     display: grid;
     grid-template-rows: auto 1fr auto;
 }
@@ -170,13 +160,7 @@ body {
     display: none;
 }
 
-/* @media (min-width: 600px){ */
-/*     #navbar-button { */
-/*         display: none; */
-/*     } */
-/* } */
-
-.navbar-toggle-button svg {
+.navbar-toggle-button>svg {
     fill: var(--bg-600);
 }
 
@@ -195,12 +179,16 @@ body {
     display: block;
 }
 
-#github-link>svg>path {
+#github-link>svg {
     fill: var(--github-color);
 }
 
 #theme-toggle>svg {
     fill: var(--fg-50);
+}
+
+#theme-toggle>.light {
+    padding: 1px;
 }
 
 [data-theme="light"] #theme-toggle>.light {
@@ -214,8 +202,6 @@ body {
 .content {
     display: flex;
     height: 100%;
-    /* min-height: 100vh; */
-    /* min-height: 100svh; */
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -275,16 +261,9 @@ body {
     padding-bottom: 0.8vh;
 }
 
-button {
-    background-color: transparent;
-    cursor: pointer;
+#refresh>svg {
+    fill: var(--fg-50);
 }
-
-/* Stop the parent from being a few pixels bigger than the actual svg */
-svg, button {
-    display: block;
-}
-
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {

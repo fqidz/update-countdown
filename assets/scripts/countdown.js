@@ -49,7 +49,7 @@ const FONT_SIZE_VH_RATIO = 1.25;
 const COUNTDOWN_VW = 80;
 const COUNTDOWN_VH = 50;
 
-const DATETIME_VW = 40;
+const DATETIME_VW = 35;
 
 const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
 
@@ -1112,8 +1112,7 @@ class RefreshButton {
         this.rotation = 0;
     }
 
-    /** @param {MouseEvent} _event */
-    #onClick(_event) {
+    #onClick() {
         if (websocket.isOpen()) {
             websocket.incrementDatetime();
             this.#animateClickRotation();
@@ -1178,7 +1177,7 @@ class RefreshButton {
         // Prevent 'Enter' key from repeatedly pressing button when held down
         this.elem.addEventListener("keyup", (event) => {
             if (event.key === "Enter") {
-                websocket.incrementDatetime();
+                this.#onClick();
             }
         })
         this.elem.addEventListener("keydown", (event) => {
