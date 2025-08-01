@@ -999,7 +999,7 @@ class DatetimeDisplay {
 }
 
 class CustomWebSocket {
-    /** @type {WebSocket | null} */
+    /** @type {WebSocket} */
     #websocket;
     /** @type {number | null} */
     #disconnect_timeout_id;
@@ -1010,49 +1010,29 @@ class CustomWebSocket {
     constructor(url) {
         this.url = url;
         this.#disconnect_timeout_id = null;
-        this.#websocket = null;
         this.connect();
     }
 
     connect() {
-        this.#websocket = new WebSocket(this.url);
-        this.#websocket.addEventListener("message", this.#onMessage.bind(this));
-        this.#websocket.binaryType = "arraybuffer";
-    }
-
-    reconnect() {
-        if (this.#websocket !== null && !this.isOpen()) {
-            this.disconnect();
-        } else if (this.#disconnect_timeout_id !== null) {
-            // Cancel disconnecting
-            clearTimeout(this.#disconnect_timeout_id);
+        if (this.isOpen()) {
             return;
         }
-        this.connect();
+        this.#websocket = new WebSocket(this.url);
+        this.#websocket.binaryType = "arraybuffer";
+
+        this.#websocket.addEventListener("open", this.#onOpen.bind(this));
+        this.#websocket.addEventListener("message", this.#onMessage.bind(this));
+        this.#websocket.addEventListener("close", this.#onClose.bind(this));
+        this.#websocket.addEventListener("error", this.#onError.bind(this));
     }
 
-    disconnect() {
-        if (this.#websocket === null) {
-            throw new Error("Tried closing websocket but is null");
+    /** @param {Event} _event */
+    #onOpen(_event) {
+        const refresh_button_elem = document.getElementById("refresh");
+        if (refresh_button_elem === null) {
+            return;
         }
-        this.#websocket?.close();
-        this.#websocket?.removeEventListener("message", this.#onMessage);
-        this.#websocket = null;
-    }
-
-    /** @param {number} milliseconds */
-    delayedDisconnect(milliseconds) {
-        if (this.#disconnect_timeout_id !== null) {
-            clearTimeout(this.#disconnect_timeout_id);
-        }
-        this.#disconnect_timeout_id = setTimeout(() => {
-            this.disconnect();
-
-            if (this.#disconnect_timeout_id !== null) {
-                clearTimeout(this.#disconnect_timeout_id);
-            }
-            this.#disconnect_timeout_id = null;
-        }, milliseconds);
+        /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = false;
     }
 
     /** @param {MessageEvent<any>} event */
@@ -1080,6 +1060,62 @@ class CustomWebSocket {
             datetime_display.updateDatetime(datetime);
             countdown_display.updateDatetimeTarget(datetime);
         }
+    }
+
+    /** @param {CloseEvent} _event */
+    #onClose(_event) {
+        this.#websocket.removeEventListener("message", this.#onMessage);
+        this.#websocket.removeEventListener("open", this.#onOpen);
+        this.#websocket.removeEventListener("close", this.#onClose);
+        this.#websocket.removeEventListener("error", this.#onError);
+    }
+
+    // TODO: Add popup notif to inform that websocket had error
+    /** @param {Event} _event */
+    #onError(_event) {
+        this.disconnect();
+        console.log("Error connecting to websocket. Reconnecting in 2 seconds.");
+        setTimeout(this.connect.bind(this), 2000);
+
+        const refresh_button_elem = document.getElementById("refresh");
+
+        if (refresh_button_elem === null) {
+            return;
+        }
+        /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = true;
+    }
+
+    disconnect() {
+        if (!this.isOpen()) {
+            return;
+        }
+        // Cleanup event listeners on this.#onClose()
+        this.#websocket.close();
+    }
+
+    /** @param {number} milliseconds */
+    delayedDisconnect(milliseconds) {
+        if (this.#disconnect_timeout_id !== null) {
+            clearTimeout(this.#disconnect_timeout_id);
+        }
+        this.#disconnect_timeout_id = setTimeout(() => {
+            this.disconnect();
+
+            // Reset timer if it's still going on
+            if (this.#disconnect_timeout_id !== null) {
+                clearTimeout(this.#disconnect_timeout_id);
+            }
+            this.#disconnect_timeout_id = null;
+        }, milliseconds);
+    }
+
+    reconnect() {
+        if (this.#disconnect_timeout_id !== null) {
+            // Cancel disconnecting
+            clearTimeout(this.#disconnect_timeout_id);
+            return;
+        }
+        this.connect();
     }
 
     incrementDatetime() {
@@ -1116,6 +1152,10 @@ class RefreshButton {
         if (websocket.isOpen()) {
             websocket.incrementDatetime();
             this.#animateClickRotation();
+            /** @type {HTMLButtonElement} */(this.elem).disabled = false;
+        } else {
+            websocket.connect();
+            // /** @type {HTMLButtonElement} */(this.elem).disabled = true;
         }
         // TODO: disable button & make it red if websocket is closed
     }

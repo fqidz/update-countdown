@@ -265,6 +265,10 @@ body {
     fill: var(--fg-50);
 }
 
+#refresh:disabled {
+    cursor: unset;
+}
+
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
     #countdown,
@@ -272,6 +276,15 @@ body {
     #theme-toggle,
     #refresh {
         transition: filter 150ms ease-in;
+    }
+
+    #refresh>svg {
+        transition: fill 150ms ease-in;
+    }
+
+    #refresh:disabled>svg {
+        fill: var(--bg-300);
+        transition: fill 150ms ease-out;
     }
 
     /* On `Blocky` display, only select the actual countdown numbers and not
@@ -288,9 +301,9 @@ body {
         transition: filter 75ms ease-out;
     }
 
-    #refresh:hover>svg {
+    #refresh:hover:enabled>svg {
         filter: brightness(75%);
-        transition: filter 50ms linear;
+        transition: filter 50ms linear, fill 150ms ease-out;
     }
 }
 
