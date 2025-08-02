@@ -64,7 +64,8 @@ button {
 }
 
 /* Stop the parent from being a few pixels bigger than the actual svg */
-svg, button {
+svg,
+button {
     display: block;
 }
 
@@ -152,15 +153,16 @@ body {
     gap: clamp(1.2em, 2vw, 1.5em);
 }
 
-.navbar-toggle-button[aria-expanded="true"]>.close {
+#navbar-toggle-button[aria-expanded="true"]>.open {
     display: none;
 }
 
-.navbar-toggle-button[aria-expanded="false"]>.open {
+#navbar-toggle-button[aria-expanded="false"]>.close,
+#navbar-toggle-button[aria-expanded="false"]+nav {
     display: none;
 }
 
-.navbar-toggle-button>svg {
+#navbar-toggle-button>svg {
     fill: var(--bg-600);
 }
 
@@ -175,7 +177,7 @@ body {
 }
 
 #github-link {
-    padding: 6px;
+    padding: 3px;
     display: block;
 }
 
@@ -271,6 +273,7 @@ body {
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
+
     #countdown,
     #datetime,
     #theme-toggle,

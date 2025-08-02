@@ -639,7 +639,7 @@ class CountdownDisplay {
                 } else {
                     // Default to `CountdownState.Blocky` for phones, and
                     // `CountdownState.CompactFull` for anything else.
-                    if (matchMedia("only screen and (max-width: 600px)").matches) {
+                    if (isOnPhone()) {
                         return CountdownState.Blocky;
                     } else {
                         return CountdownState.CompactNoMillis;
@@ -1305,6 +1305,11 @@ function setTheme(theme) {
     localStorage.setItem("theme", theme);
 }
 
+/** @returns {boolean} */
+function isOnPhone() {
+    return matchMedia("only screen and (max-width: 600px)").matches;
+}
+
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
     // theme
@@ -1332,7 +1337,18 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     });
 
     // navbar
+    const navbar_toggle_button_elem = document.getElementById("navbar-toggle-button");
+    if (navbar_toggle_button_elem === null) {
+        throw new Error("No navbar toggle button with id=\"navbar-toggle-button\"")
+    }
 
+    let is_navbar_open = !isOnPhone();
+    navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
+
+    navbar_toggle_button_elem.addEventListener("click", () => {
+        is_navbar_open = !is_navbar_open;
+        navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
+    })
 
     // countdown
     const datetime_elem = document.getElementById("datetime");
