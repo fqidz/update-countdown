@@ -1350,6 +1350,31 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
     })
 
+    // info modal
+    const info_button_elem = document.getElementById("info-button");
+    if (info_button_elem === null) {
+        throw new Error("No info button with id=\"info-button\"")
+    }
+
+    const info_modal_elem = /** @type {HTMLDialogElement | null} */(document.getElementById("info-modal"));
+    if (info_modal_elem === null) {
+        throw new Error("No info modal with id=\"info-modal\"")
+    }
+
+    const info_modal_close_button_elem = (document.getElementById("info-modal-close-button"));
+    if (info_modal_close_button_elem === null) {
+        throw new Error("No info modal close button found with id=\"info-modal-close-button\"")
+    }
+
+    info_button_elem.addEventListener("click", () => {
+        info_modal_elem.showModal();
+    })
+
+    info_modal_close_button_elem.addEventListener("click", () => {
+        info_modal_elem.close();
+    })
+
+
     // countdown
     const datetime_elem = document.getElementById("datetime");
 

@@ -91,24 +91,21 @@ body {
     font-family: "Roboto", sans-serif;
 }
 
-.font-title {
+.text-regular {
+    font-weight: 400;
+}
+
+.text-title {
     font-weight: 800;
-    font-style: normal;
 }
 
-.font-caption {
+.text-caption {
     font-weight: 600;
-    font-style: normal;
 }
 
-.font-bold {
+.text-bold {
     font-weight: 700;
     font-style: bold;
-}
-
-.font-normal {
-    font-weight: 400;
-    font-style: normal;
 }
 
 .inline {
@@ -166,7 +163,7 @@ body {
     fill: var(--bg-600);
 }
 
-.info-button {
+#info-button {
     color: var(--fg-50);
     font-size: 1em;
 }
@@ -322,4 +319,26 @@ body {
 
 #user-count {
     padding-top: 1px;
+}
+
+#info-modal {
+    position: relative;
+    margin: 8em;
+    padding: 3em;
+}
+
+#info-modal-contents {
+    display: grid;
+    row-gap: 1em;
+}
+
+#info-modal-close-button {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+}
+
+::backdrop {
+    background-color: black;
+    opacity: 25%
 }
