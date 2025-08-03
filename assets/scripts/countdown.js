@@ -999,7 +999,7 @@ class DatetimeDisplay {
 }
 
 class CustomWebSocket {
-    /** @type {WebSocket} */
+    /** @type {WebSocket | null} */
     #websocket;
     /** @type {number | null} */
     #disconnect_timeout_id;
@@ -1010,13 +1010,11 @@ class CustomWebSocket {
     constructor(url) {
         this.url = url;
         this.#disconnect_timeout_id = null;
-        this.connect();
+        this.#websocket = null;
+        this.#connect();
     }
 
-    connect() {
-        if (this.isOpen()) {
-            return;
-        }
+    #connect() {
         this.#websocket = new WebSocket(this.url);
         this.#websocket.binaryType = "arraybuffer";
 
@@ -1024,6 +1022,13 @@ class CustomWebSocket {
         this.#websocket.addEventListener("message", this.#onMessage.bind(this));
         this.#websocket.addEventListener("close", this.#onClose.bind(this));
         this.#websocket.addEventListener("error", this.#onError.bind(this));
+    }
+
+    tryConnect() {
+        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.CLOSED)) {
+            return;
+        }
+        this.#connect();
     }
 
     /** @param {Event} _event */
@@ -1064,6 +1069,9 @@ class CustomWebSocket {
 
     /** @param {CloseEvent} _event */
     #onClose(_event) {
+        if (this.#websocket === null) {
+            throw new Error("Tried closing null websocket");
+        }
         this.#websocket.removeEventListener("message", this.#onMessage);
         this.#websocket.removeEventListener("open", this.#onOpen);
         this.#websocket.removeEventListener("close", this.#onClose);
@@ -1073,9 +1081,9 @@ class CustomWebSocket {
     // TODO: Add popup notif to inform that websocket had error
     /** @param {Event} _event */
     #onError(_event) {
-        this.disconnect();
+        this.tryDisconnect();
         console.log("Error connecting to websocket. Reconnecting in 2 seconds.");
-        setTimeout(this.connect.bind(this), 2000);
+        setTimeout(this.tryConnect.bind(this), 2000);
 
         const refresh_button_elem = document.getElementById("refresh");
 
@@ -1085,10 +1093,11 @@ class CustomWebSocket {
         /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = true;
     }
 
-    disconnect() {
-        if (!this.isOpen()) {
+    tryDisconnect() {
+        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.OPEN)) {
             return;
         }
+
         // Cleanup event listeners on this.#onClose()
         this.#websocket.close();
     }
@@ -1099,7 +1108,7 @@ class CustomWebSocket {
             clearTimeout(this.#disconnect_timeout_id);
         }
         this.#disconnect_timeout_id = setTimeout(() => {
-            this.disconnect();
+            this.tryDisconnect();
 
             // Reset timer if it's still going on
             if (this.#disconnect_timeout_id !== null) {
@@ -1115,16 +1124,16 @@ class CustomWebSocket {
             clearTimeout(this.#disconnect_timeout_id);
             return;
         }
-        this.connect();
+        this.tryConnect();
     }
 
     incrementDatetime() {
         this.#websocket?.send(new Int8Array(0));
     }
 
-    /** @returns {boolean} */
-    isOpen() {
-        return this.#websocket?.readyState === WebSocket.OPEN;
+    /** @returns {number | null} */
+    state() {
+        return this.#websocket?.readyState || null;
     }
 }
 
@@ -1149,13 +1158,12 @@ class RefreshButton {
     }
 
     #onClick() {
-        if (websocket.isOpen()) {
+        if (websocket.state() === WebSocket.OPEN) {
             websocket.incrementDatetime();
             this.#animateClickRotation();
             /** @type {HTMLButtonElement} */(this.elem).disabled = false;
-        } else {
-            websocket.connect();
-            // /** @type {HTMLButtonElement} */(this.elem).disabled = true;
+        } else if (websocket.state() === WebSocket.CLOSED) {
+            websocket.tryConnect();
         }
         // TODO: disable button & make it red if websocket is closed
     }
@@ -1212,6 +1220,8 @@ class RefreshButton {
     }
 
     build() {
+        /** @type {HTMLButtonElement} */(this.elem).disabled = true;
+
         this.elem.addEventListener("click", this.#onClick.bind(this));
 
         // Prevent 'Enter' key from repeatedly pressing button when held down
@@ -1274,7 +1284,7 @@ document.addEventListener("visibilitychange", () => {
         if (browser_supports_inactive_tab_timeout) {
             websocket.delayedDisconnect(3000);
         } else {
-            websocket.disconnect();
+            websocket.tryDisconnect();
         }
         countdown_display.pause();
     }
