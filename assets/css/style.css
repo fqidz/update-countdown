@@ -11,10 +11,11 @@
     --white-50: hsl(240, 100%, 96%);
     --white-100: hsl(240, 20%, 92%);
     --white-150: hsl(240, 20%, 89%);
-    --white-300: hsl(240, 19%, 82%);
-    --white-500: hsl(240, 20%, 71%);
-    --white-600: hsl(240, 15%, 50%);
-    --white-700: hsl(240, 20%, 60%);
+    --white-200: hsl(240, 10%, 85%);
+    --white-300: hsl(240, 19%, 75%);
+    --white-500: hsl(240, 20%, 68%);
+    --white-600: hsl(240, 15%, 60%);
+    --white-700: hsl(240, 20%, 50%);
 }
 
 [data-theme="dark"] {
@@ -33,7 +34,7 @@
 [data-theme="light"] {
     --bg-100: var(--white-100);
     --bg-150: var(--white-150);
-    --bg-200: red;
+    --bg-200: var(--white-200);
     --bg-300: var(--white-300);
     --bg-500: var(--white-500);
     --bg-600: var(--white-600);
