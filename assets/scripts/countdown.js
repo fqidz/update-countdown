@@ -1320,6 +1320,17 @@ function isOnPhone() {
     return matchMedia("only screen and (max-width: 600px)").matches;
 }
 
+/**
+ * https://web.dev/articles/building/a-dialog-component#adding_light_dismiss
+ * @param {MouseEvent} event
+ */
+function lightDismiss(event) {
+    let target = /** @type {HTMLElement} */(event.target);
+    if (target?.nodeName === "DIALOG") {
+        /** @type {HTMLDialogElement} */(target)?.close();
+    }
+}
+
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
     // theme
@@ -1375,6 +1386,8 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     if (info_modal_close_button_elem === null) {
         throw new Error("No info modal close button found with id=\"info-modal-close-button\"")
     }
+
+    info_modal_elem.addEventListener("click", lightDismiss)
 
     info_button_elem.addEventListener("click", () => {
         info_modal_elem.showModal();

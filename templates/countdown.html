@@ -95,75 +95,33 @@
         <p aria-label="number of users in page" id="user-count" class="font-roboto-mono dim-fg-color">-</p>
     </div>
 </div>
-
-<dialog id="info-modal">
-    <button id="info-modal-close-button" autofocus type="button">
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
-            <path
-                d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
-        </svg>
-    </button>
-    <div id="info-modal-contents" class="font-roboto text-regular">
-        <h1>What?</h1>
-        <section>
-            <h2>TL;DR</h2>
-            <p>
-                Well-recieved indie FPS multiplayer game. Announced big update
-                coming April 2024. No update. Devs went silent. Community sad.
-                Recently released teaser trailer. Still no release date. Made this
-                website to poke fun at the situation.
-            </p>
-        </section>
-        <section>
-            <h2>Summary</h2>
-            <p>
-                <a href="https://store.steampowered.com/app/671860/BattleBit_Remastered/">
-                    BattleBit Remastered
-                </a>
-                is a low-poly, massive multiplayer first person shooter indie game
-                currently in early access, developed by SgtOkiDoki, Vilaskis, and
-                TheLiquidHorse. The game has not received any updates in over 20
-                months since December 18, 2023 (according to Steam).<br>
-            </p>
-            <p>
-                Although a major update was scheduled to be released on mid April
-                2024, it has since been pushed back indefinitely due to a number of
-                factors, mainly, feature creep and a conflicting vision for the
-                future of the game.<br>
-            </p>
-            <p>
-                With scarce information on the status of the update, most of the
-                community effectively thought that the game was abandoned.<br>
-            </p>
-            <p>
-                After just over a year since the original announced release date --
-                in which the majority of that time there was little to no
-                communication from the developers, -- a teaser trailer for the
-                update was finally released. Despite this, there is still no
-                official release date given.<br>
-            </p>
-            <p>
-                A more comprehensive overview of this whole situation can be viewed
-                in this video titled
-                <cite>
-                    <a href="https://www.youtube.com/watch?v=9cQRzrZpFCk">
-                        The Failure of BattleBit Remastered
-                    </a>
-                </cite>
-                by
-                <a href="https://www.youtube.com/@TheYamiks">
-                    TheYamiks
-                </a>
-                .
-            </p>
-        </section>
-        <section>
-            <h2>Disclaimer</h2>
-            <p>
-                This website is satire, and the countdown shown on the
-                page does not reflect the actual release date of the game’s update.
-            </p>
-        </section>
+<dialog id="info-modal" closedby="closerequest">
+    <!-- need to wrap contents here because `lightDismiss()` triggers when
+    clicking on the modal's padding -->
+    <div class="modal-wrapper">
+        <button id="info-modal-close-button" autofocus type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+                <path
+                    d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+            </svg>
+        </button>
+        <div class="info-modal-contents font-roboto text-regular">
+            <h1>What?</h1>
+            <hr />
+            <section>
+                <h2>TL;DR</h2>
+                <p>Well-recieved indie FPS multiplayer game. Announced big update coming April 2024. No update. Devs went silent. Community sad. Recently released teaser trailer. Still no release date. Made this website to poke fun at the situation.</p>
+            </section>
+            <section>
+                <h2>Summary</h2>
+                <p><cite><a href="https://store.steampowered.com/app/671860/BattleBit_Remastered/">BattleBit Remastered</a></cite> is a low-poly, massive multiplayer first person shooter indie game currently in early access, developed by SgtOkiDoki, Vilaskis, and TheLiquidHorse. The game has not received any updates in over 20 months since December 18, 2023 (according to Steam).</p>
+                <p>Although a major update was scheduled to be released on mid April 2024, it has since been pushed back indefinitely due to a number of factors, mainly, <a href="https://en.wikipedia.org/wiki/Feature_creep">feature creep</a> and a conflicting vision for the future of the game.</p>
+                <p>With scarce information on the status of the update, most of the community effectively thought that the game was abandoned.</p>
+                <p>After just over a year since the original announced release date &mdash; in which the majority of that time there was little to no communication from the developers, &mdash; a <a href="https://www.youtube.com/watch?v=QbggSwxssFU">teaser trailer</a> for the update was finally released. Despite this, there is still no official release date given.</p>
+                <p>A more comprehensive overview of this whole situation can be viewed in this video titled <cite><a href="https://www.youtube.com/watch?v=9cQRzrZpFCk">The Failure of BattleBit Remastered</a></cite> by <a href="https://www.youtube.com/@TheYamiks">TheYamiks</a>.</p>
+            </section>
+            <p id="disclaimer"><strong>Disclaimer:</strong> This website is satire and the countdown & date shown on the page does not reflect the actual release date of the game’s update.</p>
+        </div>
     </div>
 </dialog>
 {% endblock %}
