@@ -11,14 +11,14 @@ use askama::Template;
 use axum::Router;
 use axum::body::Bytes;
 use axum::extract::ws::{Message, WebSocket};
-use axum::extract::{Path, State, WebSocketUpgrade};
+use axum::extract::{State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
-use axum::routing::{get, get_service, post};
+use axum::routing::{get, get_service};
 
 use rand::distr::{Distribution, Uniform};
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 
 use futures::{SinkExt, stream::StreamExt};
 use tokio::signal;
@@ -88,8 +88,6 @@ async fn main() {
         .route("/", get(root))
         .route("/battlebit", get(battlebit))
         .route("/{game_name}/websocket", get(websocket_handler))
-        .route("/{game_name}/increment-datetime", post(increment_datetime))
-        .route("/{game_name}/query-datetime", post(query_datetime))
         .with_state(state.clone())
         .nest_service("/assets", get_service(ServeDir::new("minified/assets")))
         .layer(compression_layer)
@@ -271,16 +269,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 // because it first displays the previous datetime, increments the datetime through the websocket,
 // then after a few milliseconds it gets replaced by the new datetime.
 async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let mut datetime_write = state.datetimes.write().await;
-    let datetime = datetime_write.get_mut("battlebit").unwrap();
-
-    let mut rng = rand::rng();
-    let secs = rng.random_range(SECS_INCREMENT_RANGE);
-    *datetime += Duration::from_secs(secs);
-
-    // Send the new datetime to all clients connected to websocket
-    let tx = state.tx.clone();
-    tx.send(datetime.timestamp()).unwrap();
+    let datetime_read = state.datetimes.read().await;
+    let datetime = datetime_read.get("battlebit").unwrap();
 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
@@ -288,37 +278,6 @@ async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     };
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
-}
-
-async fn increment_datetime(
-    Path(game_name): Path<String>,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    if game_name != "battlebit" {
-        return (StatusCode::UNAUTHORIZED).into_response();
-    }
-
-    let mut datetime_write = state.datetimes.write().await;
-    let datetime = datetime_write.get_mut(&game_name).unwrap();
-
-    let mut rng = rand::rng();
-    let secs = rng.random_range(SECS_INCREMENT_RANGE);
-
-    *datetime += Duration::from_secs(secs);
-    (StatusCode::OK, datetime.timestamp().to_string()).into_response()
-}
-
-async fn query_datetime(
-    Path(game_name): Path<String>,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    if game_name != "battlebit" {
-        return (StatusCode::UNAUTHORIZED).into_response();
-    }
-    let datetime_read = state.datetimes.read().await;
-    let datetime = datetime_read.get(&game_name).unwrap();
-
-    (StatusCode::OK, datetime.timestamp().to_string()).into_response()
 }
 
 async fn shutdown_signal() {
