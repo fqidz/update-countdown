@@ -33,8 +33,13 @@ struct CountdownTemplate {
     datetime: i64,
 }
 
-// TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so. Also
-// switch to sqlite if I do that
+// struct PageState {
+//     datetime: DateTime<Utc>,
+//     user_count: u32,
+//     refresh_clicks: u64,
+// }
+
+// TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so.
 struct AppState {
     datetimes: RwLock<HashMap<String, DateTime<Utc>>>,
     user_count: Arc<HashMap<String, AtomicU32>>,

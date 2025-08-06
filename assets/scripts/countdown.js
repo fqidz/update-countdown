@@ -21,7 +21,7 @@
 /**
  * `Date` with only its time units. More convenient for calculating `Duration`
  * between dates.
- * @typedef {Object} TimeUnit
+ * @typedef {Object} DateTimeUnits
  * @property {number} year
  * @property {number} month
  * @property {number} day
@@ -70,7 +70,7 @@ const DatetimeState = Object.freeze({
 
 /**
  * @param {Date} datetime
- * @returns {TimeUnit}
+ * @returns {DateTimeUnits}
  */
 function dateToUnits(datetime) {
     return {
@@ -154,7 +154,7 @@ function ymdToDays(ymd) {
 }
 
 /**
- * Get the duration between two dates in total days, years, months, days,
+ * Get the duration between two dates in: total days, years, months, days,
  * hours, minutes, seconds, and milliseconds
  * @param {Date} date_from
  * @param {Date} date_to
@@ -337,11 +337,11 @@ class CountdownElem {
      **/
     #replace_with_container(container_id, spacer_id, target_replace_id) {
         if (this.elems.get(container_id) === null) {
-            const replacement_elem = document.createElement("p");
+            const replacement_elem = document.createElement("span");
             replacement_elem.id = target_replace_id;
             replacement_elem.style.display = "inline";
 
-            const spacer = document.createElement("p");
+            const spacer = document.createElement("span");
             spacer.id = spacer_id;
             spacer.className = "spacer";
             spacer.style.display = "inline";
@@ -402,11 +402,12 @@ class CountdownElem {
                 this.get_elem_or_throw("minutes-label").textContent = ":";
 
                 this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
+                this.get_elem_or_throw("countdown").role = "time";
                 break;
 
             case CountdownState.Compact:
                 this.#create_and_append_label_if_null("seconds-label");
-                this.#create_and_append_element_if_null("countdown-milliseconds", "p");
+                this.#create_and_append_element_if_null("countdown-milliseconds", "span");
 
                 this.#restore_container("hours-container", "hours-spacer", "countdown-hours");
                 this.#restore_container("minutes-container", "minutes-spacer", "countdown-minutes");
@@ -418,6 +419,7 @@ class CountdownElem {
                 this.get_elem_or_throw("seconds-label").textContent = ".";
 
                 this.get_elem_or_throw("countdown").classList.replace("blocky", "inline");
+                this.get_elem_or_throw("countdown").role = "time";
                 break;
 
             case CountdownState.Blocky:
@@ -434,6 +436,7 @@ class CountdownElem {
                 this.#replace_with_container("seconds-container", "seconds-spacer", "countdown-seconds");
 
                 this.get_elem_or_throw("countdown").classList.replace("inline", "blocky");
+                this.get_elem_or_throw("countdown").role = null;
                 break;
 
             default:
@@ -1071,15 +1074,15 @@ class Timeout {
 class CustomWebSocket {
     /** @type {WebSocket | null} */
     #websocket;
-    /** @type {number | null} */
-    #disconnect_timeout_id;
+    /** @type {Timeout} */
+    #disconnect_timeout
     /** @type {string} */
     url
 
     /** @param {string} url */
     constructor(url) {
         this.url = url;
-        this.#disconnect_timeout_id = null;
+        this.#disconnect_timeout = new Timeout(null);
         this.#websocket = null;
         this.#connect();
     }
@@ -1092,13 +1095,6 @@ class CustomWebSocket {
         this.#websocket.addEventListener("message", this.#onMessage.bind(this));
         this.#websocket.addEventListener("close", this.#onClose.bind(this));
         this.#websocket.addEventListener("error", this.#onError.bind(this));
-    }
-
-    tryConnect() {
-        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.CLOSED)) {
-            return;
-        }
-        this.#connect();
     }
 
     /** @param {Event} _event */
@@ -1163,37 +1159,31 @@ class CustomWebSocket {
         /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = true;
     }
 
+    tryConnect() {
+        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.CLOSED)) {
+            return;
+        }
+        this.#connect();
+    }
+
+
     tryDisconnect() {
         if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.OPEN)) {
             return;
         }
-
         // Cleanup event listeners on this.#onClose()
         this.#websocket.close();
     }
 
     /** @param {number} milliseconds */
     delayedDisconnect(milliseconds) {
-        if (this.#disconnect_timeout_id !== null) {
-            clearTimeout(this.#disconnect_timeout_id);
-        }
-        this.#disconnect_timeout_id = setTimeout(() => {
-            this.tryDisconnect();
-
-            // Reset timer if it's still going on
-            if (this.#disconnect_timeout_id !== null) {
-                clearTimeout(this.#disconnect_timeout_id);
-            }
-            this.#disconnect_timeout_id = null;
-        }, milliseconds);
+        this.#disconnect_timeout.cancel();
+        this.#disconnect_timeout.set(this.tryDisconnect.bind(this), milliseconds);
+        this.#disconnect_timeout.start();
     }
 
     reconnect() {
-        if (this.#disconnect_timeout_id !== null) {
-            // Cancel disconnecting
-            clearTimeout(this.#disconnect_timeout_id);
-            return;
-        }
+        this.#disconnect_timeout.cancel();
         this.tryConnect();
     }
 
@@ -1226,7 +1216,10 @@ const MINUTES_PER_UNIT = Object.freeze([
     525960, // year
 ])
 
-/** @param {number} time_unit */
+/**
+ * @param {number} time_unit
+ * @returns {string}
+ **/
 function timeUnitToString(time_unit) {
     switch (time_unit) {
         case TimeUnits.Minute:
@@ -1259,7 +1252,7 @@ function timeUnitToString(time_unit) {
 function toShortDuration(minutes) {
     if (minutes > MINUTES_PER_UNIT[TimeUnits.Year]) {
         const value = minutes / MINUTES_PER_UNIT[TimeUnits.Year];
-        return `${value.toFixed(2)}Y`;
+        return `${value.toFixed(2)}${timeUnitToString(TimeUnits.Year)}`;
     }
     for (let next_time_unit = 1; next_time_unit <= Object.keys(TimeUnits).length; next_time_unit++) {
         const previous_minutes_per_unit = MINUTES_PER_UNIT[next_time_unit - 1];
@@ -1269,7 +1262,7 @@ function toShortDuration(minutes) {
         }
     }
 
-    return "0m";
+    return `0${timeUnitToString(TimeUnits.Minute)}`;
 }
 
 class RefreshButton {
@@ -1282,10 +1275,10 @@ class RefreshButton {
     /** @type {HTMLSpanElement} */
     #added_duration_elem;
 
+    /** @type {Timeout} */
+    #reset_timeout;
     /** @type {number} */
     #rotation;
-    /** @type {number | null} */
-    #reset_timeout_id;
     /** @type {number} */
     #num_clicks;
 
@@ -1301,7 +1294,7 @@ class RefreshButton {
         this.#click_count_elem = click_count_elem;
         this.#added_duration_elem = added_duration_elem;
         this.#rotation = 0;
-        this.#reset_timeout_id = null;
+        this.#reset_timeout = new Timeout(this.#resetRotation.bind(this), REFRESH_BUTTON_TIMEOUT_DURATION);
         this.#num_clicks = Number(localStorage.getItem("battlebit-clicks")) || 0;
     }
 
@@ -1366,10 +1359,7 @@ class RefreshButton {
         }
         this.#svg_elem.animate(keyframe, keyframe_timing);
 
-        if (this.#reset_timeout_id !== null) {
-            clearTimeout(this.#reset_timeout_id)
-        }
-        this.#reset_timeout_id = setInterval(this.#resetRotation.bind(this), REFRESH_BUTTON_TIMEOUT_DURATION);
+        this.#reset_timeout.restart()
     }
 
     #resetRotation() {
@@ -1387,11 +1377,7 @@ class RefreshButton {
         }
         this.#svg_elem.animate(keyframe, keyframe_timing);
 
-        if (this.#reset_timeout_id === null) {
-            throw Error("timeout id is null");
-        }
-        clearTimeout(this.#reset_timeout_id);
-        this.#reset_timeout_id = null;
+        this.#reset_timeout.cancel();
     }
 
     build() {

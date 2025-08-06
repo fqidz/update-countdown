@@ -248,6 +248,8 @@ body {
 
 #countdown {
     line-height: 0.8em;
+    /* Prevent it still being clickable outside the div */
+    overflow: hidden;
 }
 
 .spacer {
@@ -312,7 +314,7 @@ body {
     /* On `Blocky` display, only select the actual countdown numbers and not
      * the spacers. */
     #countdown:hover [id^="countdown-"],
-    #countdown:hover span {
+    #countdown:hover [id$="-label"]{
         filter: brightness(85%);
         transition: filter 75ms ease-out;
     }
