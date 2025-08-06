@@ -1,6 +1,8 @@
 // @ts-check
 "use strict";
 
+// TODO: use IndexedDB instead of local storage
+
 /**
  * Duration between two datetimes.
  *
@@ -15,7 +17,6 @@
  * @property {number} seconds
  * @property {number} milliseconds
  */
-
 
 /**
  * `Date` with only its time units. More convenient for calculating `Duration`
@@ -1137,59 +1138,164 @@ class CustomWebSocket {
     }
 }
 
+const TimeUnits = Object.freeze({
+    Minute: 0,
+    Hour: 1,
+    Day: 2,
+    Week: 3,
+    Month: 4,
+    Year: 5,
+})
+
+const MINUTES_PER_UNIT = Object.freeze([
+    // Number of minutes in a...
+    1,      // minute,
+    60,     // hour,
+    1440,   // day,
+    10080,  // week,
+    43800,  // month,
+    525960, // year
+])
+
+/** @param {number} time_unit */
+function timeUnitToString(time_unit) {
+    switch (time_unit) {
+        case TimeUnits.Minute:
+            return 'm'
+        case TimeUnits.Hour:
+            return 'h'
+        case TimeUnits.Day:
+            return 'd'
+        case TimeUnits.Week:
+            return 'w'
+        case TimeUnits.Month:
+            return 'M'
+        case TimeUnits.Year:
+            return 'Y'
+        default:
+            throw new Error("Invalid TimeUnit");
+    }
+}
+
+/**
+ * Calculates the largest time unit that can fit the given minutes.
+ *
+ * ## Examples
+ * 57m    -> 57m
+ * 1000m  -> 16.67h
+ * 17000m -> 1.69w
+ * @param {number} minutes
+ * @returns {string}
+ **/
+function toShortDuration(minutes) {
+    if (minutes > MINUTES_PER_UNIT[TimeUnits.Year]) {
+        const value = minutes / MINUTES_PER_UNIT[TimeUnits.Year];
+        return `${value.toFixed(2)}Y`;
+    }
+    for (let next_time_unit = 1; next_time_unit <= Object.keys(TimeUnits).length; next_time_unit++) {
+        const previous_minutes_per_unit = MINUTES_PER_UNIT[next_time_unit - 1];
+        if (minutes >=  previous_minutes_per_unit && minutes < MINUTES_PER_UNIT[next_time_unit]) {
+            let value = minutes / previous_minutes_per_unit;
+        return `${value.toFixed(2)}${timeUnitToString(next_time_unit - 1)}`;
+        }
+    }
+
+    return "0m";
+}
+
 class RefreshButton {
-    /** @type {HTMLElement} */
-    elem;
+    /** @type {HTMLButtonElement} */
+    #elem;
     /** @type {SVGElement} */
-    svg_elem;
+    #svg_elem;
+    /** @type {HTMLSpanElement} */
+    #click_count_elem;
+    /** @type {HTMLSpanElement} */
+    #added_duration_elem;
+
     /** @type {number} */
-    rotation;
+    #rotation;
     /** @type {number | null} */
     #reset_timeout_id;
+    /** @type {number} */
+    #num_clicks;
 
     /**
-     * @param {HTMLElement} elem
+     * @param {HTMLButtonElement} elem
      * @param {SVGElement} svg_elem
+     * @param {HTMLSpanElement} click_count_elem
+     * @param {HTMLSpanElement} added_duration_elem
      */
-    constructor(elem, svg_elem) {
-        this.elem = elem;
-        this.svg_elem = svg_elem;
-        this.rotation = 0;
+    constructor(elem, svg_elem, click_count_elem, added_duration_elem) {
+        this.#elem = elem;
+        this.#svg_elem = svg_elem;
+        this.#click_count_elem = click_count_elem;
+        this.#added_duration_elem = added_duration_elem;
+        this.#rotation = 0;
+        this.#reset_timeout_id = null;
+        this.#num_clicks = Number(localStorage.getItem("battlebit-clicks")) || 0;
+    }
+
+    #tryShowClickCount() {
+        if (this.#click_count_elem.classList.contains("hide")) {
+            if (this.#num_clicks >= 10) {
+                this.#click_count_elem.classList.remove("hide");
+            }
+        }
+    }
+
+    #displayAddedDuration() {
+        // Although each click randomly adds 25-35 minutes to the datetime,
+        // because it's uniformly distributed, it eventually converges
+        // to 30 minutes per click.
+        //
+        // Add 25-35 minutes to fake some randomness
+        const random_minutes = 25 + Math.random() * 10;
+        const added_duration_minutes = (this.#num_clicks - 1) * 30 + random_minutes;
+        this.#added_duration_elem.textContent = `${toShortDuration(added_duration_minutes)}`;
     }
 
     #onClick() {
         if (websocket.state() === WebSocket.OPEN) {
             websocket.incrementDatetime();
             this.#animateClickRotation();
-            /** @type {HTMLButtonElement} */(this.elem).disabled = false;
+            if (this.#elem.disabled) {
+                this.#elem.disabled = false;
+            }
+
+            const num_clicks = String(++this.#num_clicks);
+            localStorage.setItem("battlebit-clicks", num_clicks);
+            this.#tryShowClickCount();
+            this.#click_count_elem.textContent = num_clicks;
+
+            this.#displayAddedDuration();
         } else if (websocket.state() === WebSocket.CLOSED) {
             websocket.tryConnect();
         }
-        // TODO: disable button & make it red if websocket is closed
     }
 
     #animateClickRotation() {
         // This allows us to continue from the current rotation when it's in
         // the middle of animating back to 0 rotation.
-        if (this.rotation === 0) {
+        if (this.#rotation === 0) {
             const rotation_deg = Number(
-                window.getComputedStyle(this.svg_elem).rotate.slice(0, -3)
+                window.getComputedStyle(this.#svg_elem).rotate.slice(0, -3)
             ) || 0;
             if (rotation_deg !== 0) {
-                this.rotation = rotation_deg * Math.PI / 180;
+                this.#rotation = rotation_deg * Math.PI / 180;
             }
         }
 
         // 55deg = 0.9599310885968813rad
-        this.rotation = Math.max(0, this.rotation + 0.9599310885968813);
+        this.#rotation = Math.max(0, this.#rotation + 0.9599310885968813);
 
-        const keyframe = rotationKeyframe(this.rotation);
+        const keyframe = rotationKeyframe(this.#rotation);
         const keyframe_timing = {
             duration: REFRESH_BUTTON_TIMEOUT_DURATION,
             easing: "linear(0, 0.679 18%, 0.895 27.6%, 1.037 37.8%, 1.104 47.4%, 1.12 58%, 1)",
             fill: /** @type {FillMode} */ ("forwards"),
         }
-        this.svg_elem.animate(keyframe, keyframe_timing);
+        this.#svg_elem.animate(keyframe, keyframe_timing);
 
         if (this.#reset_timeout_id !== null) {
             clearTimeout(this.#reset_timeout_id)
@@ -1198,19 +1304,19 @@ class RefreshButton {
     }
 
     #resetRotation() {
-        if (this.rotation === 0) {
+        if (this.#rotation === 0) {
             return;
         }
-        const duration = Math.ceil(Math.pow(this.rotation, 0.75) * 100 + 50);
+        const duration = Math.ceil(Math.pow(this.#rotation, 0.75) * 100 + 50);
 
-        this.rotation = 0;
+        this.#rotation = 0;
         const keyframe = rotationKeyframe(0);
         const keyframe_timing = {
             duration,
             easing: "cubic-bezier(.9,-0.01,.42,1.58)",
             fill: /** @type {FillMode} */ ("forwards"),
         }
-        this.svg_elem.animate(keyframe, keyframe_timing);
+        this.#svg_elem.animate(keyframe, keyframe_timing);
 
         if (this.#reset_timeout_id === null) {
             throw Error("timeout id is null");
@@ -1220,21 +1326,24 @@ class RefreshButton {
     }
 
     build() {
-        /** @type {HTMLButtonElement} */(this.elem).disabled = true;
+        /** @type {HTMLButtonElement} */(this.#elem).disabled = true;
 
-        this.elem.addEventListener("click", this.#onClick.bind(this));
+        this.#elem.addEventListener("click", this.#onClick.bind(this));
 
         // Prevent 'Enter' key from repeatedly pressing button when held down
-        this.elem.addEventListener("keyup", (event) => {
+        this.#elem.addEventListener("keyup", (event) => {
             if (event.key === "Enter") {
                 this.#onClick();
             }
         })
-        this.elem.addEventListener("keydown", (event) => {
+        this.#elem.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 event.preventDefault();
             }
         })
+
+        this.#click_count_elem.textContent = String(this.#num_clicks);
+        this.#displayAddedDuration();
     }
 }
 
@@ -1412,17 +1521,27 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     datetime_display.init();
     countdown_display.start();
 
-    const refresh_button_elem = document.getElementById("refresh");
+    const refresh_button_elem = /** @type {HTMLButtonElement | null} */(document.getElementById("refresh"));
     if (refresh_button_elem === null) {
         throw new Error("No element with id=\"refresh\"");
     }
 
-    const refresh_svg_elem = /** @type {SVGElement} */(document.querySelector("#refresh>svg"));
+    const refresh_svg_elem = /** @type {SVGElement | null} */(document.querySelector("#refresh>svg"));
     if (refresh_svg_elem === null) {
         throw new Error("No svg element inside id=\"refresh\"");
     }
 
-    const refresh_button = new RefreshButton(refresh_button_elem, refresh_svg_elem);
+    const click_count_elem = document.getElementById("user-click-count-statistic");
+    if (click_count_elem === null) {
+        throw new Error("No element with id=\"user-click-count-statistic\"");
+    }
+
+    const added_duration_elem = document.getElementById("user-added-duration-statistic");
+    if (added_duration_elem === null) {
+        throw new Error("No element with id=\"user-added-duration-statistic\"");
+    }
+
+    const refresh_button = new RefreshButton(refresh_button_elem, refresh_svg_elem, click_count_elem, added_duration_elem);
     refresh_button.build();
 
     const countdown_elem = document.getElementById("countdown");

@@ -1,3 +1,4 @@
+/* TODO: try to avoid using id as selectors and instead try to use classes like with tailwind */
 :root {
     --gray-50: hsl(240, 9%, 6%);
     --gray-100: hsl(240, 9.8%, 8%);
@@ -254,14 +255,28 @@ body {
 }
 
 .button-refresh-container {
-    display: flex;
-    width: 100%;
-    align-self: flex-end;
-    justify-content: center;
-    align-items: center;
-    bottom: 0;
-    padding-top: 1vh;
-    padding-bottom: 0.8vh;
+    position: relative;
+    margin-top: 1vh;
+    margin-bottom: 0.8vh;
+}
+
+#user-click-count-statistic {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(calc(-100% - 1em), -50%);
+}
+
+/* #refresh-click-count.hide { */
+/*     transition: display 1s ease-out; */
+/*     display: none; */
+/* } */
+
+#user-added-duration-statistic {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translate(calc(100% + 1em), -50%);
 }
 
 #refresh>svg {
@@ -383,7 +398,6 @@ body {
 #info-modal a:visited {
     color: plum;
 }
-
 
 .info-modal-contents {
     display: grid;
