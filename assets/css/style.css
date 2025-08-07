@@ -87,9 +87,17 @@ body {
     color: var(--bg-600);
 }
 
+.very-dim-fg-color {
+    color: var(--bg-300);
+}
+
 .font-roboto-mono {
     font-family: "Roboto Mono", monospace;
     font-optical-sizing: auto;
+}
+
+.font-size-regular {
+    font-size: 1em;
 }
 
 .font-roboto {

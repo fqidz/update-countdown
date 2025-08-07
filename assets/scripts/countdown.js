@@ -2,6 +2,7 @@
 "use strict";
 
 // TODO: use IndexedDB instead of local storage
+// TODO: split up into modules
 
 /**
  * Duration between two datetimes.
@@ -234,14 +235,38 @@ class CountdownElem {
     constructor() {
         this.elems = new Map();
 
-        this.elems.set("countdown", document.getElementById("countdown"));
-        this.elems.set("countdown-days", document.getElementById("countdown-days"));
-        this.elems.set("days-label", document.getElementById("days-label"));
-        this.elems.set("countdown-hours", document.getElementById("countdown-hours"));
-        this.elems.set("hours-label", document.getElementById("hours-label"));
-        this.elems.set("countdown-minutes", document.getElementById("countdown-minutes"));
-        this.elems.set("minutes-label", document.getElementById("minutes-label"));
-        this.elems.set("countdown-seconds", document.getElementById("countdown-seconds"));
+        this.elems.set(
+            "countdown",
+            document.getElementById("countdown") ?? assertElementExists("countdown")
+        );
+        this.elems.set(
+            "countdown-days",
+            document.getElementById("countdown-days") ?? assertElementExists("countdown-days")
+        );
+        this.elems.set(
+            "days-label",
+            document.getElementById("days-label") ?? assertElementExists("days-label")
+        );
+        this.elems.set(
+            "countdown-hours",
+            document.getElementById("countdown-hours") ?? assertElementExists("countdown-hours")
+        );
+        this.elems.set(
+            "hours-label",
+            document.getElementById("hours-label") ?? assertElementExists("hours-label")
+        );
+        this.elems.set(
+            "countdown-minutes",
+            document.getElementById("countdown-minutes") ?? assertElementExists("countdown-minutes")
+        );
+        this.elems.set(
+            "minutes-label",
+            document.getElementById("minutes-label") ?? assertElementExists("minutes-label")
+        );
+        this.elems.set(
+            "countdown-seconds",
+            document.getElementById("countdown-seconds") ?? assertElementExists("countdown-seconds")
+        );
 
         // The following can all be null
         this.elems.set("countdown-milliseconds", document.getElementById("countdown-milliseconds"));
@@ -304,6 +329,7 @@ class CountdownElem {
 
     /**
      * @param {string} elem_id
+     * @throws {Error}
      * @returns {HTMLElement}
      **/
     get_elem_or_throw(elem_id) {
@@ -317,7 +343,10 @@ class CountdownElem {
         }
     }
 
-    /** @param {string} elem_id */
+    /**
+    * @param {string} elem_id
+    * @throws {Error}
+    * */
     #remove_elem(elem_id) {
         const elem = this.elems.get(elem_id);
         if (elem === null) {
@@ -445,7 +474,7 @@ class CountdownElem {
     }
 }
 
-class DisplayState extends EventTarget {
+class DisplayState {
     /** @type {number} */
     state;
     /** @type {number} */
@@ -460,7 +489,6 @@ class DisplayState extends EventTarget {
      * @param {String} local_storage_name where to load and save the state.
      */
     constructor(state, num_states, local_storage_name) {
-        super();
         this.state = state;
         this.num_states = num_states;
         this.#local_storage_name = local_storage_name;
@@ -1505,10 +1533,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     }
     setTheme(theme);
 
-    const theme_toggle_button_elem = document.getElementById("theme-toggle");
-    if (theme_toggle_button_elem === null) {
-        throw new Error("No theme toggle button with id=\"theme-toggle\"")
-    }
+    const theme_toggle_button_elem = document.getElementById("theme-toggle") ?? assertElementExists("theme-toggle");
 
     theme_toggle_button_elem.addEventListener("click", () => {
         if (theme === "dark") {
@@ -1522,10 +1547,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     });
 
     // navbar
-    const navbar_toggle_button_elem = document.getElementById("navbar-toggle-button");
-    if (navbar_toggle_button_elem === null) {
-        throw new Error("No navbar toggle button with id=\"navbar-toggle-button\"")
-    }
+    const navbar_toggle_button_elem = document.getElementById("navbar-toggle-button") ?? assertElementExists("navbar-toggle-button");
 
     let is_navbar_open = !isOnPhone();
     navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
@@ -1536,20 +1558,9 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     })
 
     // info modal
-    const info_button_elem = document.getElementById("info-button");
-    if (info_button_elem === null) {
-        throw new Error("No info button with id=\"info-button\"")
-    }
-
-    const info_modal_elem = /** @type {HTMLDialogElement | null} */(document.getElementById("info-modal"));
-    if (info_modal_elem === null) {
-        throw new Error("No info modal with id=\"info-modal\"")
-    }
-
-    const info_modal_close_button_elem = (document.getElementById("info-modal-close-button"));
-    if (info_modal_close_button_elem === null) {
-        throw new Error("No info modal close button found with id=\"info-modal-close-button\"")
-    }
+    const info_button_elem = document.getElementById("info-button") ?? assertElementExists("info-button");
+    const info_modal_elem = /** @type {HTMLDialogElement} */(document.getElementById("info-modal")) ?? assertElementExists("info-modal");
+    const info_modal_close_button_elem = (document.getElementById("info-modal-close-button")) ?? assertElementExists("info-modal-close-button");
 
     info_modal_elem.addEventListener("click", lightDismiss)
 
@@ -1563,11 +1574,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
 
 
     // countdown
-    const datetime_elem = document.getElementById("datetime");
-
-    if (datetime_elem === null) {
-        throw new Error("No element with id=\"datetime\"");
-    }
+    const datetime_elem = document.getElementById("datetime") ?? assertElementExists("datetime");
 
     const datetime = new Date(Number(datetime_elem.textContent) * 1000);
     datetime_display = new DatetimeDisplay(datetime)
@@ -1576,11 +1583,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     datetime_display.init();
     countdown_display.start();
 
-    const refresh_button_elem = /** @type {HTMLButtonElement | null} */(document.getElementById("refresh"));
-    if (refresh_button_elem === null) {
-        throw new Error("No element with id=\"refresh\"");
-    }
-
+    const refresh_button_elem = /** @type {HTMLButtonElement} */(document.getElementById("refresh")) ?? assertElementExists("refresh");
     const refresh_svg_elem = /** @type {SVGElement | null} */(document.querySelector("#refresh>svg"));
     if (refresh_svg_elem === null) {
         throw new Error("No svg element inside id=\"refresh\"");
