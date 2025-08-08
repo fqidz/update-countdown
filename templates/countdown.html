@@ -76,7 +76,6 @@
             </div>
         </div>
         <div class="button-refresh-container">
-            <span id="user-click-count-statistic" class="font-roboto-mono dim-fg-color hide">-</span>
             <button aria-label="refresh date time" type="button" id="refresh">
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960"
                     width="48px">
@@ -84,7 +83,14 @@
                         d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
                 </svg>
             </button>
-            <span id="user-added-duration-statistic" class="font-roboto-mono dim-fg-color hide">-</span>
+            <button id="user-statistic" class="font-roboto-mono font-size-regular">
+                <span id="statistic-year" style="display:none">0Y</span><!--
+                --><span id="statistic-month" style="display:none">0M</span><!--
+                --><span id="statistic-week" style="display:none">0w</span><!--
+                --><span id="statistic-day" style="display:none">0d</span><!--
+                --><span id="statistic-hour" style="display:none">0h</span><!--
+                --><span id="statistic-minute" class="very-dim-fg-color ">0m</span>
+            </button>
         </div>
     </div>
 

@@ -265,28 +265,17 @@ body {
 }
 
 .button-refresh-container {
-    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.8em;
     margin-top: 1vh;
     margin-bottom: 0.8vh;
 }
 
-#user-click-count-statistic {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(calc(-100% - 1em), -50%);
-}
-
-/* #refresh-click-count.hide { */
-/*     transition: display 1s ease-out; */
-/*     display: none; */
-/* } */
-
-#user-added-duration-statistic {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translate(calc(100% + 1em), -50%);
+#user-statistic {
+    display: flex;
+    gap: 0.7em;
+    min-width: min-content;
 }
 
 #refresh>svg {
