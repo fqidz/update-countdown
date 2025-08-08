@@ -79,6 +79,14 @@ body {
     overflow-y: scroll;
 }
 
+a {
+    text-decoration-line: inherit;
+}
+
+a:hover {
+    text-decoration-line: underline;
+}
+
 .main-fg-color {
     color: var(--fg-50);
 }
@@ -387,11 +395,6 @@ body {
 
 #info-modal a {
     color: lightblue;
-    text-decoration-line: inherit;
-}
-
-#info-modal a:hover {
-    text-decoration-line: underline;
 }
 
 #info-modal a:visited {
