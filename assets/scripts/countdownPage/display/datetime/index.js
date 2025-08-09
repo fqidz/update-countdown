@@ -1,11 +1,15 @@
 // @ts-check
 "use strict";
 
+import { FONT_SIZE_VW_RATIO } from "../index";
+import { DisplayState } from '../index'
+import { DatetimeState } from './state'
+
 // Hardcode these here instead of setting it in css, because it's not accurate
 // when "extracting" it from the css
 const DISPLAY_VW = 35;
 
-class DatetimeDisplay {
+export class DatetimeDisplay {
     /** @type {Date} */
     datetime
     /** @type {DisplayState} */

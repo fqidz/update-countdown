@@ -1,7 +1,9 @@
 // @ts-check
 "use strict";
 
-class CustomWebSocket {
+import { Timeout } from '../../utils/timeout';
+
+export class CustomWebSocket {
     /** @type {WebSocket | null} */
     #websocket;
     /** @type {Timeout} */

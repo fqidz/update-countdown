@@ -6,8 +6,6 @@ export const FONT_SIZE_VW_RATIO = 1.6666666666666665;
 // 5:4 or 5/4
 export const FONT_SIZE_VH_RATIO = 1.25;
 
-const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
-
 export class DisplayState {
     /** @type {number} */
     state;

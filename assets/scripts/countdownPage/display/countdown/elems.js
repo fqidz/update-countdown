@@ -1,6 +1,9 @@
 // @ts-check
 "use strict";
 
+import { assertElementExists } from '../../../utils/assert';
+import { CountdownState } from './state';
+
 // TODO: Figure out a better way to do this. It feels very messy & not safe due to using a `Map`.
 export class CountdownElem {
     /** @type {Map<string, HTMLElement | null>} */

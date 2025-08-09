@@ -1,6 +1,13 @@
 // @ts-check
 "use strict";
 
+import { CountdownDisplay } from './display/countdown';
+import { DatetimeDisplay } from './display/datetime';
+import { RefreshButton } from './display/refresh';
+
+import { CustomWebSocket } from './websocket';
+import { assertElementExists } from '../utils/assert';
+
 // TODO: use IndexedDB instead of local storage
 
 let browser_supports_inactive_tab_timeout = false;
@@ -153,8 +160,6 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     if (refresh_svg_elem === null) {
         throw new Error("No svg inside id=\"refresh\"");
     }
-
-    const user_statistic = new UserStatistic(getUserStatisticElems());
 
     const refresh_button = new RefreshButton(refresh_button_elem, refresh_svg_elem);
     refresh_button.build();

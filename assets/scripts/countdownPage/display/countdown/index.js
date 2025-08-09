@@ -1,9 +1,12 @@
 // @ts-check
 "use strict";
 
-import { FONT_SIZE_VH_RATIO, FONT_SIZE_VW_RATIO } from "../index.mjs";
-import { CountdownElem } from './elems.mjs'
-import { CountdownState } from './state.mjs'
+/** @import { Duration } from '../../datetime/index.mjs' */
+import { FONT_SIZE_VH_RATIO, FONT_SIZE_VW_RATIO } from "../index";
+import { CountdownElem } from './elems.js'
+import { CountdownState } from './state'
+import { DisplayState } from '../index'
+import { getDuration } from '../../datetime/duration'
 
 // Hardcode these here instead of setting it in css, because it's not accurate
 // when "extracting" it from the css
@@ -16,7 +19,7 @@ class Countdown extends EventTarget {
     #datetime_target;
     /** @type {Date} */
     #datetime_now;
-    /** @type {dt.Duration} */
+    /** @type {Duration} */
     #diff_duration;
     /** @type {number} */
     #timeout;
@@ -65,7 +68,7 @@ class Countdown extends EventTarget {
         this.dispatchEvent(new CustomEvent("milliseconds", { detail: val }));
     }
 
-    /** @param {dt.Duration} new_diff_duration */
+    /** @param {Duration} new_diff_duration */
     #innerEmitUpdate(new_diff_duration) {
         this.#emitUpdateMilliseconds(new_diff_duration.milliseconds);
 

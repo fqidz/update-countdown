@@ -1,7 +1,13 @@
 // @ts-check
 "use strict";
 
-class RefreshButton {
+import { Timeout } from '../../../utils/timeout';
+import { UserStatistic } from '../userStatistics';
+import { getUserStatisticElems } from '../userStatistics/elems';
+
+const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
+
+export class RefreshButton {
     /** @type {HTMLButtonElement} */
     #elem;
     /** @type {SVGElement} */

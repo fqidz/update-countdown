@@ -2,35 +2,11 @@
 "use strict";
 
 /** @import { UserStatisticElems } from './types.mjs' */
-/** @import { DisplayState } from '../index' */
-import { unwrapSome } from '../../../utils/assert.mjs';
+/** @import { UnitDuration } from '../../datetime/index.mjs' */
+import { TimeUnits, formatUnitDuration, MINUTES_PER_UNIT } from '../../datetime/timeunit';
+import { unwrapSome } from '../../../utils/assert';
 import { UserStatisticState } from './state'
-
-/** @returns {UserStatisticElems} */
-function getUserStatisticElems() {
-    const container = unwrapSome(/** @type {HTMLButtonElement} */(document.getElementById("user-statistic")));
-    if (container.nodeName !== "BUTTON") {
-        throw new Error('id="user-statistic element" found but is not a Button');
-    }
-    const year = unwrapSome(document.getElementById("statistic-year"));
-    const month = unwrapSome(document.getElementById("statistic-month"));
-    const week = unwrapSome(document.getElementById("statistic-week"));
-    const day = unwrapSome(document.getElementById("statistic-day"));
-    const hour = unwrapSome(document.getElementById("statistic-hour"));
-    const minute = unwrapSome(document.getElementById("statistic-minute"));
-    const click = document.getElementById("statistic-click");
-
-    return {
-        container,
-        year,
-        month,
-        week,
-        day,
-        hour,
-        minute,
-        click,
-    }
-}
+import { DisplayState } from '../index'
 
 const MINUTES_PER_CLICK = 30;
 
@@ -55,7 +31,7 @@ export class UserStatistic {
 
     /**
      * @param {number} minutes
-     * @returns {dt.UnitDuration[]}
+     * @returns {UnitDuration[]}
      **/
     #calculateDuration(minutes) {
         const time_units_length = Object.keys(TimeUnits).length;

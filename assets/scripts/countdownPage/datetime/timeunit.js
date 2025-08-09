@@ -1,7 +1,7 @@
 // @ts-check
 "use strict";
 
-const TimeUnits = Object.freeze({
+export const TimeUnits = Object.freeze({
     Minute: 0,
     Hour: 1,
     Day: 2,
@@ -10,7 +10,7 @@ const TimeUnits = Object.freeze({
     Year: 5,
 })
 
-const MINUTES_PER_UNIT = Object.freeze([
+export const MINUTES_PER_UNIT = Object.freeze([
     // Number of minutes in a...
     1,      // minute,
     60,     // hour,
@@ -44,11 +44,11 @@ function timeUnitToString(time_unit) {
 }
 
 /**
- * @property {number} time_unit
- * @property {number} value
+ * @param {number} time_unit
+ * @param {number} value
  * @returns {string}
  **/
-function formatUnitDuration(time_unit, value) {
+export function formatUnitDuration(time_unit, value) {
     if (time_unit === TimeUnits.Hour || time_unit === TimeUnits.Minute) {
         return `${String(value).padStart(2, '0')}${timeUnitToString(time_unit)}`
     }
