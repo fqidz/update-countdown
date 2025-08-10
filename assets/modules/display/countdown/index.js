@@ -2,11 +2,13 @@
 "use strict";
 
 /** @import { Duration } from '../../datetime/index.mjs' */
+/** @import { CountdownElemIdNameMap } from './elems' */
 import { FONT_SIZE_VH_RATIO, FONT_SIZE_VW_RATIO } from "../index";
-import { CountdownElem } from './elems.js'
 import { CountdownState } from './state'
 import { DisplayState } from '../index'
 import { getDuration } from '../../datetime/duration'
+
+import { countdownElems } from './elems';
 
 // Hardcode these here instead of setting it in css, because it's not accurate
 // when "extracting" it from the css
@@ -167,8 +169,6 @@ export class CountdownDisplay {
     countdown;
     /** @type {DisplayState} */
     state;
-    /** @type {CountdownElem} */
-    elem;
     /** @type {number} */
     days_text_len
 
@@ -193,7 +193,6 @@ export class CountdownDisplay {
             Object.keys(CountdownState).length,
             "countdown_state",
         );
-        this.elem = new CountdownElem();
         this.days_text_len = 0;
         this.is_first_update = true;
     }
@@ -214,13 +213,14 @@ export class CountdownDisplay {
     }
 
     /**
-     * @param {string} elem_id
-     * @param {string} spacer_id
+     * @template {keyof CountdownElemIdNameMap} K
+     * @param {K} elem_id
+     * @param {K} spacer_id
      **/
     #updateSpacer(elem_id, spacer_id) {
         const len =
-            Math.max(this.days_text_len - (this.elem.get_elem_or_throw(elem_id).textContent?.length ?? 0), 0);
-        this.elem.get_elem_or_throw(spacer_id).textContent =
+            Math.max(this.days_text_len - (countdownElems.get(elem_id).textContent?.length ?? 0), 0);
+        countdownElems.get(spacer_id).textContent =
             "0".repeat(len);
     }
 
@@ -231,18 +231,19 @@ export class CountdownDisplay {
     }
 
     /**
-     * @param {string} elem_id
-     * @param {string} spacer_id
+     * @template {keyof CountdownElemIdNameMap} K
+     * @param {K} elem_id
+     * @param {K} spacer_id
      * @param {string} new_text
      **/
     #setBlockyText(elem_id, spacer_id, new_text) {
-        const elem = this.elem.get_elem_or_throw(elem_id);
+        const elem = countdownElems.get(elem_id);
         const previous_spacer_len = Math.max(this.days_text_len - (elem.textContent?.length ?? 0), 0);
         elem.textContent = new_text;
         const new_spacer_len = Math.max(this.days_text_len - (elem.textContent?.length ?? 0), 0);
 
         if (new_spacer_len !== previous_spacer_len) {
-            this.elem.get_elem_or_throw(spacer_id).textContent =
+            countdownElems.get(spacer_id).textContent =
                 "0".repeat(new_spacer_len);
         }
     }
@@ -251,7 +252,7 @@ export class CountdownDisplay {
     #updateMilliseconds(event) {
         switch (this.state.state) {
             case CountdownState.Compact:
-                this.elem.get_elem_or_throw("countdown-milliseconds").textContent =
+                countdownElems.get("countdown-milliseconds").textContent =
                     String(event.detail).padStart(3, "0",);
                 break;
 
@@ -269,7 +270,7 @@ export class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:
             case CountdownState.Compact:
-                this.elem.get_elem_or_throw("countdown-seconds").textContent =
+                countdownElems.get("countdown-seconds").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
 
@@ -287,7 +288,7 @@ export class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:
             case CountdownState.Compact:
-                this.elem.get_elem_or_throw("countdown-minutes").textContent =
+                countdownElems.get("countdown-minutes").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
 
@@ -305,7 +306,7 @@ export class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:
             case CountdownState.Compact:
-                this.elem.get_elem_or_throw("countdown-hours").textContent =
+                countdownElems.get("countdown-hours").textContent =
                     String(event.detail).padStart(2, "0",);
                 break;
 
@@ -335,7 +336,7 @@ export class CountdownDisplay {
 
     /** @param {CustomEvent} event */
     #updateTotalDays(event) {
-        const days_elem = this.elem.get_elem_or_throw("countdown-days");
+        const days_elem = countdownElems.get("countdown-days");
         const previous_len = days_elem.textContent?.length;
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:
@@ -362,7 +363,7 @@ export class CountdownDisplay {
     }
 
     #updateDisplayDOM() {
-        this.elem.cycle_to_state(this.state.state);
+        countdownElems.switchState(this.state.state);
         if (this.countdown.interval_id !== null) {
             this.countdown.setIntervalTimeout(this.#getTimeout());
         }
@@ -376,7 +377,7 @@ export class CountdownDisplay {
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:
             case CountdownState.Compact:
-                text_len = String(this.elem.get_elem_or_throw("countdown").textContent).length;
+                text_len = String(countdownElems.get("container").textContent).length;
                 text_num_lines = 1;
                 break;
 
@@ -384,10 +385,10 @@ export class CountdownDisplay {
                 text_len =
                     // add one because of the label (i.e. D, H, M, S)
                     Math.max(
-                        String(this.elem.get_elem_or_throw("countdown-days").textContent).length,
-                        String(this.elem.get_elem_or_throw("countdown-hours").textContent).length,
-                        String(this.elem.get_elem_or_throw("countdown-minutes").textContent).length,
-                        String(this.elem.get_elem_or_throw("countdown-seconds").textContent).length,
+                        String(countdownElems.get("countdown-days").textContent).length,
+                        String(countdownElems.get("countdown-hours").textContent).length,
+                        String(countdownElems.get("countdown-minutes").textContent).length,
+                        String(countdownElems.get("countdown-seconds").textContent).length,
                     ) + 1;
                 text_num_lines = 4;
                 break;
@@ -398,7 +399,7 @@ export class CountdownDisplay {
 
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DISPLAY_VW) / text_len)}vw`;
         const font_size_vh = `${String((FONT_SIZE_VH_RATIO * DISPLAY_VH) / text_num_lines)}vh`;
-        const countdown_elem = this.elem.get_elem_or_throw("countdown");
+        const countdown_elem = countdownElems.get("container");
 
         switch (this.state.state) {
             case CountdownState.CompactNoMillis:

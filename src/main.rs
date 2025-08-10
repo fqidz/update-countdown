@@ -94,7 +94,7 @@ async fn main() {
         .route("/battlebit", get(battlebit))
         .route("/{game_name}/websocket", get(websocket_handler))
         .with_state(state.clone())
-        .nest_service("/assets", get_service(ServeDir::new("minified/assets")))
+        .nest_service("/assets", get_service(ServeDir::new("dist/assets")))
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 

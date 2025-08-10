@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 
 {% block head %}
-<link rel="preload" href="assets/scripts/countdown_page/main.js" as="script" />
-<script src="assets/scripts/countdown.js"></script>
+<link rel="preload" href="/assets/scripts/countdown.js" as="script" />
+<script type="module" src="/assets/scripts/countdown.js"></script>
 <base target="_blank">
 {% endblock %}
 
@@ -58,16 +58,14 @@
             </h1>
         </div>
         <div class="display-container">
-            <button id="countdown" class="font-roboto-mono text-bold main-fg-color inline">
+            <button id="countdown" class="font-roboto-mono text-bold main-fg-color inline" role="time">
                 <span id="countdown-days">0</span><!--
                 --><span id="days-label">:</span><!--
                 --><span id="countdown-hours">00</span><!--
                 --><span id="hours-label">:</span><!--
                 --><span id="countdown-minutes">00</span><!--
                 --><span id="minutes-label">:</span><!--
-                --><span id="countdown-seconds">00</span><!--
-                --><span id="seconds-label">.</span><!--
-                --><span id="countdown-milliseconds">000</span>
+                --><span id="countdown-seconds">00</span>
             </button>
             <div class="datetime-container">
                 <button type="button" class="font-roboto-mono text-regular dim-fg-color" id="datetime">

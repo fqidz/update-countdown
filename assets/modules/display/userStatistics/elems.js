@@ -1,7 +1,7 @@
 // @ts-check
 "use strict";
 
-import { unwrapSome } from '../../../utils/assert';
+import { unwrapSome } from '../../utils/assert';
 
 /** @returns {UserStatisticElems} */
 export function getUserStatisticElems() {

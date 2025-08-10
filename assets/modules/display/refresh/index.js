@@ -1,7 +1,7 @@
 // @ts-check
 "use strict";
 
-import { Timeout } from '../../../utils/timeout';
+import { Timeout } from '../../utils/timeout';
 import { UserStatistic } from '../userStatistics';
 import { getUserStatisticElems } from '../userStatistics/elems';
 

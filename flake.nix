@@ -28,6 +28,7 @@
 
               pkgs.cargo
               pkgs.rustc
+              pkgs.esbuild
 
               pkgs.minify
               pkgs.upx

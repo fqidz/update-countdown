@@ -1,12 +1,13 @@
 // @ts-check
 "use strict";
 
-import { CountdownDisplay } from './display/countdown';
-import { DatetimeDisplay } from './display/datetime';
-import { RefreshButton } from './display/refresh';
+import { CountdownDisplay } from '../modules/display/countdown';
+import { DatetimeDisplay } from '../modules/display/datetime';
+import { RefreshButton } from '../modules/display/refresh';
 
-import { CustomWebSocket } from './websocket';
-import { assertElementExists } from '../utils/assert';
+import { CustomWebSocket } from '../modules/websocket';
+import { assertElementExists } from '../modules/utils/assert';
+import { countdownElems } from '../modules/display/countdown/elems';
 
 // TODO: use IndexedDB instead of local storage
 
@@ -97,6 +98,7 @@ function lightDismiss(event) {
 
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
+    countdownElems.switchState(2);
     // theme
     let theme = localStorage.getItem("theme");
     if (theme === null) {

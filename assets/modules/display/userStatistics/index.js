@@ -4,7 +4,7 @@
 /** @import { UserStatisticElems } from './types.mjs' */
 /** @import { UnitDuration } from '../../datetime/index.mjs' */
 import { TimeUnits, formatUnitDuration, MINUTES_PER_UNIT } from '../../datetime/timeunit';
-import { unwrapSome } from '../../../utils/assert';
+import { unwrapSome } from '../../utils/assert';
 import { UserStatisticState } from './state'
 import { DisplayState } from '../index'
 
