@@ -262,51 +262,51 @@ export const countdownElems = {
             case CountdownState.CompactNoMillis: {
                 container.classList.replace("blocky", "inline")
                 container.innerHTML = `
-                    <span id="countdown-days"></span>
-                    <span id="days-label">:</span>
-                    <span id="countdown-hours"></span>
-                    <span id="hours-label">:</span>
-                    <span id="countdown-minutes"></span>
-                    <span id="minutes-label">:</span>
-                    <span id="countdown-seconds"></span>
+                    <span id="countdown-days"></span
+                    ><span id="days-label">:</span
+                    ><span id="countdown-hours"></span
+                    ><span id="hours-label">:</span
+                    ><span id="countdown-minutes"></span
+                    ><span id="minutes-label">:</span
+                    ><span id="countdown-seconds"></span>
                 `;
                 break;
             }
             case CountdownState.Compact: {
                 container.classList.replace("blocky", "inline")
                 container.innerHTML = `
-                    <span id="countdown-days"></span>
-                    <span id="days-label">:</span>
-                    <span id="countdown-hours"></span>
-                    <span id="hours-label">:</span>
-                    <span id="countdown-minutes"></span>
-                    <span id="minutes-label">:</span>
-                    <span id="countdown-seconds"></span>
-                    <span id="seconds-label">.</span>
-                    <span id="countdown-milliseconds"></span>
+                    <span id="countdown-days"></span
+                    ><span id="days-label">:</span
+                    ><span id="countdown-hours"></span
+                    ><span id="hours-label">:</span
+                    ><span id="countdown-minutes"></span
+                    ><span id="minutes-label">:</span
+                    ><span id="countdown-seconds"></span
+                    ><span id="seconds-label">.</span
+                    ><span id="countdown-milliseconds"></span>
                 `;
                 break;
             }
             case CountdownState.Blocky: {
                 container.classList.replace("inline", "blocky")
                 container.innerHTML = `
-                    <span id="countdown-days"></span>
-                    <span id="days-label">D</span>
-                    <div id="hours-container">
-                        <span id="hours-spacer" class="spacer" ariaHidden="true"></span>
-                        <span id="countdown-hours"></span>
-                    </div>
-                    <span id="hours-label">H</span>
-                    <div id="minutes-container">
-                        <span id="minutes-spacer" class="spacer" ariaHidden="true"></span>
-                        <span id="countdown-minutes"></span>
-                    </div>
-                    <span id="minutes-label">M</span>
-                    <div id="seconds-container">
-                        <span id="seconds-spacer" class="spacer" ariaHidden="true"></span>
-                        <span id="countdown-seconds"></span>
-                    </div>
-                    <span id="seconds-label">S</span>
+                    <span id="countdown-days"></span
+                    ><span id="days-label">D</span
+                    ><div id="hours-container"
+                        ><span id="hours-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="countdown-hours"></span
+                    ></div
+                    ><span id="hours-label">H</span
+                    ><div id="minutes-container"
+                        ><span id="minutes-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="countdown-minutes"></span
+                    ></div
+                    ><span id="minutes-label">M</span
+                    ><div id="seconds-container"
+                        ><span id="seconds-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="countdown-seconds"></span
+                    ></div
+                    ><span id="seconds-label">S</span>
                 `;
                 break;
             }
