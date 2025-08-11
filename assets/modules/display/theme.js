@@ -1,7 +1,7 @@
 // @ts-check
 "use strict";
 
-import { assertTagName, unwrapSome } from "../../utils/assert";
+import { assertTagName, unwrapSome } from "../utils/assert";
 
 export const theme = {
     /** @param {string} theme_toggle_button_id */

@@ -41,54 +41,46 @@ class Countdown extends EventTarget {
         this.interval_id = null;
     }
 
-    /** @param {number} val */
-    #emitUpdateTotalDays(val) {
-        this.dispatchEvent(new CustomEvent("totaldays", { detail: val }));
-    }
-
-    /** @param {number} val */
-    #emitUpdateDays(val) {
-        this.dispatchEvent(new CustomEvent("days", { detail: val }));
-    }
-
-    /** @param {number} val */
-    #emitUpdateHours(val) {
-        this.dispatchEvent(new CustomEvent("hours", { detail: val }));
-    }
-
-    /** @param {number} val */
-    #emitUpdateMinutes(val) {
-        this.dispatchEvent(new CustomEvent("minutes", { detail: val }));
-    }
-
-    /** @param {number} val */
-    #emitUpdateSeconds(val) {
-        this.dispatchEvent(new CustomEvent("seconds", { detail: val }));
-    }
-
-    /** @param {number} val */
-    #emitUpdateMilliseconds(val) {
-        this.dispatchEvent(new CustomEvent("milliseconds", { detail: val }));
+    /**
+     * @template {keyof Duration} K
+     * @param {K} duration_name
+     * @param {number} new_value
+     */
+    #emitUpdate(duration_name, new_value) {
+        switch (duration_name) {
+            case "total_days":
+                this.dispatchEvent(new CustomEvent("totaldays", { detail: new_value }));
+                break;
+            case "days":
+            case "hours":
+            case "minutes":
+            case "seconds":
+            case "milliseconds":
+                this.dispatchEvent(new CustomEvent(duration_name, { detail: new_value }));
+                break;
+            default:
+                throw new Error("invalid duration name");
+        }
     }
 
     /** @param {Duration} new_diff_duration */
     #innerEmitUpdate(new_diff_duration) {
-        this.#emitUpdateMilliseconds(new_diff_duration.milliseconds);
+        this.#emitUpdate("milliseconds", new_diff_duration.milliseconds);
 
         if (new_diff_duration.seconds !== this.#diff_duration.seconds) {
-            this.#emitUpdateSeconds(new_diff_duration.seconds);
+            this.#emitUpdate("seconds", new_diff_duration.seconds);
         }
         if (new_diff_duration.minutes !== this.#diff_duration.minutes) {
-            this.#emitUpdateMinutes(new_diff_duration.minutes);
+            this.#emitUpdate("minutes", new_diff_duration.minutes);
         }
         if (new_diff_duration.hours !== this.#diff_duration.hours) {
-            this.#emitUpdateHours(new_diff_duration.hours);
+            this.#emitUpdate("hours", new_diff_duration.hours);
         }
         if (new_diff_duration.days !== this.#diff_duration.days) {
-            this.#emitUpdateDays(new_diff_duration.days);
+            this.#emitUpdate("days", new_diff_duration.days);
         }
         if (new_diff_duration.total_days !== this.#diff_duration.total_days) {
-            this.#emitUpdateTotalDays(new_diff_duration.total_days);
+            this.#emitUpdate("total_days", new_diff_duration.total_days);
         }
 
         this.#diff_duration = new_diff_duration;
@@ -126,12 +118,12 @@ class Countdown extends EventTarget {
     }
 
     emitAll() {
-        this.#emitUpdateDays(this.#diff_duration.days);
-        this.#emitUpdateHours(this.#diff_duration.hours);
-        this.#emitUpdateMinutes(this.#diff_duration.minutes);
-        this.#emitUpdateSeconds(this.#diff_duration.seconds);
-        this.#emitUpdateMilliseconds(this.#diff_duration.milliseconds);
-        this.#emitUpdateTotalDays(this.#diff_duration.total_days);
+        this.#emitUpdate("days", this.#diff_duration.days);
+        this.#emitUpdate("hours", this.#diff_duration.hours);
+        this.#emitUpdate("minutes", this.#diff_duration.minutes);
+        this.#emitUpdate("seconds", this.#diff_duration.seconds);
+        this.#emitUpdate("milliseconds", this.#diff_duration.milliseconds);
+        this.#emitUpdate("total_days", this.#diff_duration.total_days);
     }
 
     pause() {
@@ -195,7 +187,6 @@ export class CountdownDisplay {
             "countdown_state",
         );
         this.days_text_len = 0;
-        this.is_first_update = true;
     }
 
     /** @returns {number} */

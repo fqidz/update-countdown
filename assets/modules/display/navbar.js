@@ -1,8 +1,8 @@
 // @ts-check
 "use strict";
 
-import { assertTagName, unwrapSome } from "../../utils/assert";
-import { isOnPhone } from "../../utils/mediaQuery";
+import { assertTagName, unwrapSome } from "../utils/assert";
+import { isOnPhone } from "../utils/mediaQuery";
 
 export const navbar = {
     /** @param {string} navbar_toggle_button_id */
