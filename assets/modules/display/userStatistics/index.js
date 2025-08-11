@@ -86,30 +86,6 @@ export class UserStatistic {
         this.#updateDisplayDOM();
     }
 
-    /**
-     * @param {number} time_unit
-     * @throws {Error}
-     * @returns {HTMLSpanElement}
-     **/
-    #getTimeUnitAsElem(time_unit) {
-        switch (time_unit) {
-            case TimeUnits.Year:
-                return userStatisticElems.get("statistic-year");
-            case TimeUnits.Month:
-                return userStatisticElems.get("statistic-month");
-            case TimeUnits.Week:
-                return userStatisticElems.get("statistic-week");
-            case TimeUnits.Day:
-                return userStatisticElems.get("statistic-day");
-            case TimeUnits.Hour:
-                return userStatisticElems.get("statistic-hour");
-            case TimeUnits.Minute:
-                return userStatisticElems.get("statistic-minute");
-            default:
-                throw new Error("invalid timeunit");
-        }
-    }
-
     #updateDisplayDOM() {
         switch (this.#state.state) {
             case UserStatisticState.AddedDuration: {
@@ -127,7 +103,7 @@ export class UserStatistic {
                     if (unit_duration.time_unit > greatest_present_unit) {
                         greatest_present_unit = unit_duration.time_unit;
                     }
-                    const elem = this.#getTimeUnitAsElem(
+                    const elem = getTimeUnitAsElem(
                         unit_duration.time_unit,
                     );
                     const text = formatUnitDuration(
@@ -149,7 +125,7 @@ export class UserStatistic {
                 // hard to watch the number. e.g. added duration of '3w 4d 20m' results in display of '3w 4d 00h 20m'
                 for (let i = 0; i < absent_units.length; i++) {
                     const absent_time_unit = absent_units[i];
-                    const elem = this.#getTimeUnitAsElem(absent_time_unit);
+                    const elem = getTimeUnitAsElem(absent_time_unit);
                     const text = formatUnitDuration(absent_time_unit, 0);
                     if (elem.textContent !== text) {
                         elem.textContent = text;
@@ -170,7 +146,7 @@ export class UserStatistic {
                     time_unit < time_units_length;
                     time_unit++
                 ) {
-                    const elem = this.#getTimeUnitAsElem(time_unit);
+                    const elem = getTimeUnitAsElem(time_unit);
                     elem.className = "hidden";
                     elem.textContent = "";
                 }
@@ -196,5 +172,29 @@ export class UserStatistic {
             .addEventListener("click", (_event) => {
                 this.cycleState();
             });
+    }
+}
+
+/**
+ * @param {number} time_unit
+ * @throws {Error}
+ * @returns {HTMLSpanElement}
+ **/
+function getTimeUnitAsElem(time_unit) {
+    switch (time_unit) {
+        case TimeUnits.Year:
+            return userStatisticElems.get("statistic-year");
+        case TimeUnits.Month:
+            return userStatisticElems.get("statistic-month");
+        case TimeUnits.Week:
+            return userStatisticElems.get("statistic-week");
+        case TimeUnits.Day:
+            return userStatisticElems.get("statistic-day");
+        case TimeUnits.Hour:
+            return userStatisticElems.get("statistic-hour");
+        case TimeUnits.Minute:
+            return userStatisticElems.get("statistic-minute");
+        default:
+            throw new Error("invalid timeunit");
     }
 }
