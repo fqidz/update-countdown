@@ -11,6 +11,7 @@ import { countdownElems } from '../modules/display/countdown/elems';
 import { isOnPhone } from '../modules/utils/mediaQuery';
 import { theme } from '../modules/display/theme';
 import { navbar } from '../modules/display/navbar';
+import { modal } from '../modules/display/modal';
 
 // TODO: use IndexedDB instead of local storage
 
@@ -71,37 +72,12 @@ let user_count = null;
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");
 
-/**
- * https://web.dev/articles/building/a-dialog-component#adding_light_dismiss
- * @param {MouseEvent} event
- */
-function lightDismiss(event) {
-    let target = /** @type {HTMLElement} */(event.target);
-    if (target?.nodeName === "DIALOG") {
-        /** @type {HTMLDialogElement} */(target)?.close();
-    }
-}
 
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
     theme.build("theme-toggle");
     navbar.build("navbar-toggle-button");
-
-    // info modal
-    const info_button_elem = document.getElementById("info-button") ?? assertElementExists("info-button");
-    const info_modal_elem = /** @type {HTMLDialogElement} */(document.getElementById("info-modal")) ?? assertElementExists("info-modal");
-    const info_modal_close_button_elem = (document.getElementById("info-modal-close-button")) ?? assertElementExists("info-modal-close-button");
-
-    info_modal_elem.addEventListener("click", lightDismiss)
-
-    info_button_elem.addEventListener("click", () => {
-        info_modal_elem.showModal();
-    })
-
-    info_modal_close_button_elem.addEventListener("click", () => {
-        info_modal_elem.close();
-    })
-
+    modal.build("info-modal", "info-button", "info-modal-close-button");
 
     // countdown
     const datetime_elem = document.getElementById("datetime") ?? assertElementExists("datetime");
