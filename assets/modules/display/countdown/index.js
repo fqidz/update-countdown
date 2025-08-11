@@ -7,6 +7,7 @@ import { FONT_SIZE_VH_RATIO, FONT_SIZE_VW_RATIO } from "../index";
 import { CountdownState } from './state'
 import { DisplayState } from '../index'
 import { getDuration } from '../../datetime/duration'
+import { isOnPhone } from '../../utils/mediaQuery';
 
 import { countdownElems } from './elems';
 

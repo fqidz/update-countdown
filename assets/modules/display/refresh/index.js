@@ -3,7 +3,6 @@
 
 import { Timeout } from '../../utils/timeout';
 import { UserStatistic } from '../userStatistics';
-import { getUserStatisticElems } from '../userStatistics/elems';
 
 const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
 
@@ -30,7 +29,7 @@ export class RefreshButton {
     constructor(elem, svg_elem) {
         this.#elem = elem;
         this.#svg_elem = svg_elem;
-        this.#user_statistic = new UserStatistic(getUserStatisticElems());
+        this.#user_statistic = new UserStatistic();
         this.#rotation = 0;
         this.#reset_rotation_timeout = new Timeout(this.#resetRotation.bind(this), REFRESH_BUTTON_TIMEOUT_DURATION);
     }

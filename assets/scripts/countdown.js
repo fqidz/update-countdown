@@ -8,6 +8,7 @@ import { RefreshButton } from '../modules/display/refresh';
 import { CustomWebSocket } from '../modules/websocket';
 import { assertElementExists } from '../modules/utils/assert';
 import { countdownElems } from '../modules/display/countdown/elems';
+import { isOnPhone } from '../modules/utils/mediaQuery';
 
 // TODO: use IndexedDB instead of local storage
 
@@ -78,11 +79,6 @@ function setTheme(theme) {
         throw new Error("Invalid theme");
     }
     localStorage.setItem("theme", theme);
-}
-
-/** @returns {boolean} */
-function isOnPhone() {
-    return matchMedia("only screen and (max-width: 600px)").matches;
 }
 
 /**

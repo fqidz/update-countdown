@@ -15,18 +15,14 @@ export class UserStatistic {
     #state;
     /** @type {number} */
     #click_count;
-    /** @type {UserStatisticElems} */
-    #elems;
 
-    /** @param {UserStatisticElems} elems*/
-    constructor(elems) {
+    constructor() {
         this.#state = new DisplayState(
             Number(localStorage.getItem("user-statistic-state")) || UserStatisticState.AddedDuration,
             Object.keys(UserStatisticState).length,
             "user-statistic-state"
         );
         this.#click_count = Number(localStorage.getItem("battlebit-click-count")) || 0;
-        this.#elems = elems;
     }
 
     /**
