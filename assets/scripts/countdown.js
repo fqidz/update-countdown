@@ -7,8 +7,6 @@ import { RefreshButton } from '../modules/display/refresh';
 
 import { CustomWebSocket } from '../modules/websocket';
 import { assertElementExists } from '../modules/utils/assert';
-import { countdownElems } from '../modules/display/countdown/elems';
-import { isOnPhone } from '../modules/utils/mediaQuery';
 import { theme } from '../modules/display/theme';
 import { navbar } from '../modules/display/navbar';
 import { modal } from '../modules/display/modal';
@@ -71,7 +69,6 @@ let user_count = null;
 
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");
-
 
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
