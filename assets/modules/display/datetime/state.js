@@ -7,4 +7,3 @@ export const DatetimeState = Object.freeze({
     Iso8601: 1,
     LocalTimezone: 2,
 });
-

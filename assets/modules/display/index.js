@@ -31,4 +31,3 @@ export class DisplayState {
         localStorage.setItem(this.#local_storage_name, String(this.state));
     }
 }
-

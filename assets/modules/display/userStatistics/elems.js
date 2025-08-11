@@ -1,8 +1,8 @@
 // @ts-check
 "use strict";
 
-import { assertTagName, unwrapSome } from '../../utils/assert';
-import { UserStatisticState } from './state';
+import { assertTagName, unwrapSome } from "../../utils/assert";
+import { UserStatisticState } from "./state";
 
 /**
  * @typedef UserStatisticElemIdNameMap
@@ -23,11 +23,14 @@ export const userStatisticElems = {
      * @throws {Error}
      * @returns {UserStatisticElemIdNameMap[K] | null}
      */
-    tryGet: function(id) {
-        switch(id) {
+    tryGet: (id) => {
+        switch (id) {
             case "container":
                 // @ts-ignore
-                return assertTagName(document.getElementById("user-statistic"), "button");
+                return assertTagName(
+                    document.getElementById("user-statistic"),
+                    "button",
+                );
             case "statistic-year":
             case "statistic-month":
             case "statistic-week":
@@ -48,7 +51,7 @@ export const userStatisticElems = {
      * @throws {Error}
      * @returns {UserStatisticElemIdNameMap[K]}
      */
-    get: function(id) {
+    get: function (id) {
         return unwrapSome(this.tryGet(id));
     },
 
@@ -57,7 +60,7 @@ export const userStatisticElems = {
      * @throws {Error}
      * @returns {void}
      **/
-    switchState: function(state) {
+    switchState: function (state) {
         const container = this.get("container");
         switch (state) {
             case UserStatisticState.AddedDuration: {
@@ -76,7 +79,7 @@ export const userStatisticElems = {
                 break;
             }
             default:
-                throw new Error("invalid state")
+                throw new Error("invalid state");
         }
-    }
-}
+    },
+};

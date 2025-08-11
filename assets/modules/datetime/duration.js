@@ -24,7 +24,7 @@ function dateToUnits(datetime) {
  * @returns {boolean}
  */
 function isLeapYear(year) {
-    return ((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0);
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 /**
@@ -50,7 +50,7 @@ function daysInMonth(month, is_leap_year) {
         /* Sep */ 30,
         /* Oct */ 31,
         /* Nov */ 30,
-        /* Dec */ 31
+        /* Dec */ 31,
     ][month];
 }
 
@@ -80,12 +80,15 @@ function ymdToDays(ymd) {
         m += 12;
     }
 
-    return 365 * y +
+    return (
+        365 * y +
         Math.floor(y / 4) -
         Math.floor(y / 100) +
         Math.floor(y / 400) +
         Math.floor((153 * m - 457) / 5) +
-        d - 306;
+        d -
+        306
+    );
 }
 
 /**
@@ -116,7 +119,7 @@ export function getDuration(date_from, date_to) {
             month: date_to_units.month,
             day: date_to_units.day,
         },
-    )
+    );
 
     // Borrow from the next time unit if the current one is negative.
     // TODO: I feel like theres a better way to do this.
@@ -140,8 +143,11 @@ export function getDuration(date_from, date_to) {
     if (days < 0) {
         // equivalent to `month mod 12`, because '%' in js doesn't work with
         // negative numbers
-        const month_before_date_to = ((date_to_units.month - 1 % 12) + 12) % 12;
-        days += daysInMonth(month_before_date_to, isLeapYear(date_to_units.year));
+        const month_before_date_to = (date_to_units.month - (1 % 12) + 12) % 12;
+        days += daysInMonth(
+            month_before_date_to,
+            isLeapYear(date_to_units.year),
+        );
         months--;
     }
     if (months < 0) {
@@ -158,5 +164,5 @@ export function getDuration(date_from, date_to) {
         minutes,
         seconds,
         milliseconds,
-    }
+    };
 }

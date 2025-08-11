@@ -1,8 +1,8 @@
 // @ts-check
 "use strict";
 
-import { assertTagName, unwrapSome } from '../../utils/assert';
-import { CountdownState } from './state';
+import { assertTagName, unwrapSome } from "../../utils/assert";
+import { CountdownState } from "./state";
 
 /**
  * @typedef CountdownElemIdNameMap
@@ -31,11 +31,14 @@ export const countdownElems = {
      * @throws {Error}
      * @returns {CountdownElemIdNameMap[K] | null}
      */
-    tryGet: function(id) {
+    tryGet: (id) => {
         switch (id) {
             case "container":
                 // @ts-ignore
-                return assertTagName(document.getElementById("countdown"), "button");
+                return assertTagName(
+                    document.getElementById("countdown"),
+                    "button",
+                );
             case "countdown-days":
             case "countdown-hours":
             case "countdown-minutes":
@@ -66,7 +69,7 @@ export const countdownElems = {
      * @throws {Error}
      * @returns {CountdownElemIdNameMap[K]}
      */
-    get: function(id) {
+    get: function (id) {
         return unwrapSome(this.tryGet(id));
     },
 
@@ -75,11 +78,11 @@ export const countdownElems = {
      * @throws {Error}
      * @returns {void}
      **/
-    switchState: function(state) {
+    switchState: function (state) {
         const container = this.get("container");
         switch (state) {
             case CountdownState.CompactNoMillis: {
-                container.classList.replace("blocky", "inline")
+                container.classList.replace("blocky", "inline");
                 container.innerHTML = `<span id="countdown-days"></span
                     ><span id="days-label">:</span
                     ><span id="countdown-hours"></span
@@ -90,7 +93,7 @@ export const countdownElems = {
                 break;
             }
             case CountdownState.Compact: {
-                container.classList.replace("blocky", "inline")
+                container.classList.replace("blocky", "inline");
                 container.innerHTML = `<span id="countdown-days"></span
                     ><span id="days-label">:</span
                     ><span id="countdown-hours"></span
@@ -103,7 +106,7 @@ export const countdownElems = {
                 break;
             }
             case CountdownState.Blocky: {
-                container.classList.replace("inline", "blocky")
+                container.classList.replace("inline", "blocky");
                 container.innerHTML = `<span id="countdown-days"></span
                     ><span id="days-label">D</span
                     ><div id="hours-container"
@@ -124,7 +127,7 @@ export const countdownElems = {
                 break;
             }
             default:
-                throw new Error("invalid state")
+                throw new Error("invalid state");
         }
-    }
-}
+    },
+};

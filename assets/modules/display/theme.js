@@ -5,15 +5,21 @@ import { assertTagName, unwrapSome } from "../utils/assert";
 
 export const theme = {
     /** @param {string} theme_toggle_button_id */
-    build: function(theme_toggle_button_id) {
+    build: (theme_toggle_button_id) => {
         let theme = localStorage.getItem("theme");
         if (theme === null) {
-            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+            theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
         }
         setTheme(theme);
 
-        const button =
-            unwrapSome(assertTagName(document.getElementById(theme_toggle_button_id), 'button'));
+        const button = unwrapSome(
+            assertTagName(
+                document.getElementById(theme_toggle_button_id),
+                "button",
+            ),
+        );
 
         button.addEventListener("click", () => {
             if (theme === "dark") {
@@ -21,12 +27,12 @@ export const theme = {
             } else if (theme === "light") {
                 theme = "dark";
             } else {
-                throw new Error("assert can only be \"light\" or \"dark\"");
+                throw new Error('assert can only be "light" or "dark"');
             }
             setTheme(theme);
         });
-    }
-}
+    },
+};
 
 /** @param {string} theme */
 function setTheme(theme) {
@@ -39,4 +45,3 @@ function setTheme(theme) {
     }
     localStorage.setItem("theme", theme);
 }
-

@@ -258,7 +258,7 @@ a:hover {
     align-self: center;
     justify-self: center;
     margin: 0 clamp(1.5em, 8vw, 15em);
-    font-size: clamp(0.8em, min(5vh, 2.2vw), 1.35em)
+    font-size: clamp(0.8em, min(5vh, 2.2vw), 1.35em);
 }
 
 #countdown,
@@ -310,8 +310,7 @@ a:hover {
     #theme-toggle,
     #refresh,
     #info-button,
-    #info-modal-close-button
-    {
+    #info-modal-close-button {
         transition: filter 150ms ease-in;
     }
 
@@ -327,7 +326,7 @@ a:hover {
     /* On `Blocky` display, only select the actual countdown numbers and not
      * the spacers. */
     #countdown:hover [id^="countdown-"],
-    #countdown:hover [id$="-label"]{
+    #countdown:hover [id$="-label"] {
         filter: brightness(85%);
         transition: filter 75ms ease-out;
     }
@@ -342,7 +341,9 @@ a:hover {
 
     #refresh:hover:enabled>svg {
         filter: brightness(75%);
-        transition: filter 50ms linear, fill 150ms ease-out;
+        transition:
+            filter 50ms linear,
+            fill 150ms ease-out;
     }
 }
 
@@ -388,7 +389,7 @@ a:hover {
     height: 1px;
     border: 0;
     background-color: var(--bg-300);
-    width: 100%
+    width: 100%;
 }
 
 #info-modal h2 {
@@ -432,5 +433,5 @@ p#disclaimer {
 
 ::backdrop {
     background-color: black;
-    opacity: 35%
+    opacity: 35%;
 }

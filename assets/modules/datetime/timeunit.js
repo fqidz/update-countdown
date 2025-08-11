@@ -8,17 +8,17 @@ export const TimeUnits = Object.freeze({
     Week: 3,
     Month: 4,
     Year: 5,
-})
+});
 
 export const MINUTES_PER_UNIT = Object.freeze([
     // Number of minutes in a...
-    1,      // minute,
-    60,     // hour,
-    1440,   // day,
-    10080,  // week,
-    43800,  // month,
+    1, // minute,
+    60, // hour,
+    1440, // day,
+    10080, // week,
+    43800, // month,
     525960, // year
-])
+]);
 
 /**
  * @param {number} time_unit
@@ -27,17 +27,17 @@ export const MINUTES_PER_UNIT = Object.freeze([
 function timeUnitToString(time_unit) {
     switch (time_unit) {
         case TimeUnits.Minute:
-            return 'm'
+            return "m";
         case TimeUnits.Hour:
-            return 'h'
+            return "h";
         case TimeUnits.Day:
-            return 'd'
+            return "d";
         case TimeUnits.Week:
-            return 'w'
+            return "w";
         case TimeUnits.Month:
-            return 'M'
+            return "M";
         case TimeUnits.Year:
-            return 'Y'
+            return "Y";
         default:
             throw new Error("Invalid TimeUnit");
     }
@@ -50,7 +50,7 @@ function timeUnitToString(time_unit) {
  **/
 export function formatUnitDuration(time_unit, value) {
     if (time_unit === TimeUnits.Hour || time_unit === TimeUnits.Minute) {
-        return `${String(value).padStart(2, '0')}${timeUnitToString(time_unit)}`
+        return `${String(value).padStart(2, "0")}${timeUnitToString(time_unit)}`;
     }
-    return `${value}${timeUnitToString(time_unit)}`
+    return `${value}${timeUnitToString(time_unit)}`;
 }

@@ -3,13 +3,13 @@
 
 export class Timeout {
     /** @type {number} */
-    #inner_timeout_id
+    #inner_timeout_id;
     /** @type {Function | null} */
-    #handler
+    #handler;
     /** @type {number} */
-    timeout
+    timeout;
     /** @type {boolean} */
-    finished
+    finished;
 
     /**
      * @param {Function | null} handler
@@ -47,7 +47,7 @@ export class Timeout {
         this.finished = false;
         this.#inner_timeout_id = setTimeout(() => {
             if (this.#handler !== null) {
-                this.#handler()
+                this.#handler();
             }
             this.finished = true;
         }, this.timeout);

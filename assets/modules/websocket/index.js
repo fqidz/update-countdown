@@ -1,13 +1,13 @@
 // @ts-check
 "use strict";
 
-import { Timeout } from '../utils/timeout';
+import { Timeout } from "../utils/timeout";
 
 export class CustomWebSocket extends EventTarget {
     /** @type {WebSocket | null} */
     #websocket;
     /** @type {Timeout} */
-    #disconnect_timeout
+    #disconnect_timeout;
     /** @type {string} */
     url;
 
@@ -32,7 +32,7 @@ export class CustomWebSocket extends EventTarget {
 
     /** @param {Event} _event */
     #onOpen(_event) {
-        this.dispatchEvent(new CustomEvent("open"))
+        this.dispatchEvent(new CustomEvent("open"));
     }
 
     /** @param {MessageEvent<any>} event */
@@ -40,9 +40,13 @@ export class CustomWebSocket extends EventTarget {
         const msg = new DataView(event.data).getBigInt64(0, false);
 
         if (msg > Number.MAX_SAFE_INTEGER) {
-            throw new Error(`Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${msg}`)
+            throw new Error(
+                `Timestamp exceeds 'Number.MAX_SAFE_INTEGER': ${msg}`,
+            );
         } else if (msg < Number.MIN_SAFE_INTEGER) {
-            throw new Error(`Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`)
+            throw new Error(
+                `Timestamp exceeds 'Number.MIN_SAFE_INTEGER': ${msg}`,
+            );
         }
 
         const msg_as_number = Number(msg);
@@ -50,9 +54,17 @@ export class CustomWebSocket extends EventTarget {
         if (Number.isNaN(msg_as_number)) {
             throw Error("Unexpected WebSocket message recieved");
         } else if (msg_as_number < 0) {
-            this.dispatchEvent(new CustomEvent("updateusercount", { detail: msg_as_number * -1 }))
+            this.dispatchEvent(
+                new CustomEvent("updateusercount", {
+                    detail: msg_as_number * -1,
+                }),
+            );
         } else {
-            this.dispatchEvent(new CustomEvent("updatedatetime", { detail: new Date(msg_as_number * 1000) }))
+            this.dispatchEvent(
+                new CustomEvent("updatedatetime", {
+                    detail: new Date(msg_as_number * 1000),
+                }),
+            );
         }
     }
 
@@ -73,20 +85,27 @@ export class CustomWebSocket extends EventTarget {
     /** @param {Event} _event */
     #onError(_event) {
         this.tryDisconnect();
-        console.log("Error connecting to websocket. Reconnecting in 2 seconds.");
+        console.log(
+            "Error connecting to websocket. Reconnecting in 2 seconds.",
+        );
         setTimeout(this.tryConnect.bind(this), 2000);
     }
 
     tryConnect() {
-        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.CLOSED)) {
+        if (
+            this.#websocket === null ||
+            (this.state() !== null && this.state() !== WebSocket.CLOSED)
+        ) {
             return;
         }
         this.#connect();
     }
 
-
     tryDisconnect() {
-        if (this.#websocket === null || (this.state() !== null && this.state() !== WebSocket.OPEN)) {
+        if (
+            this.#websocket === null ||
+            (this.state() !== null && this.state() !== WebSocket.OPEN)
+        ) {
             return;
         }
         // Cleanup event listeners on this.#onClose()
@@ -96,7 +115,10 @@ export class CustomWebSocket extends EventTarget {
     /** @param {number} milliseconds */
     delayedDisconnect(milliseconds) {
         this.#disconnect_timeout.cancel();
-        this.#disconnect_timeout.set(this.tryDisconnect.bind(this), milliseconds);
+        this.#disconnect_timeout.set(
+            this.tryDisconnect.bind(this),
+            milliseconds,
+        );
         this.#disconnect_timeout.start();
     }
 

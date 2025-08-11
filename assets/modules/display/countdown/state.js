@@ -7,4 +7,3 @@ export const CountdownState = Object.freeze({
     Compact: 1,
     Blocky: 2,
 });
-
