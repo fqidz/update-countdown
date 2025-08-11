@@ -9,6 +9,7 @@ import { CustomWebSocket } from '../modules/websocket';
 import { assertElementExists } from '../modules/utils/assert';
 import { countdownElems } from '../modules/display/countdown/elems';
 import { isOnPhone } from '../modules/utils/mediaQuery';
+import { theme } from '../modules/display/theme';
 
 // TODO: use IndexedDB instead of local storage
 
@@ -69,18 +70,6 @@ let user_count = null;
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");
 
-/** @param {string} theme */
-function setTheme(theme) {
-    if (theme === "dark") {
-        document.body.dataset.theme = "dark";
-    } else if (theme === "light") {
-        document.body.dataset.theme = "light";
-    } else {
-        throw new Error("Invalid theme");
-    }
-    localStorage.setItem("theme", theme);
-}
-
 /**
  * https://web.dev/articles/building/a-dialog-component#adding_light_dismiss
  * @param {MouseEvent} event
@@ -94,27 +83,7 @@ function lightDismiss(event) {
 
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
-    countdownElems.switchState(2);
-    // theme
-    let theme = localStorage.getItem("theme");
-    if (theme === null) {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ?
-            "dark" : "light";
-    }
-    setTheme(theme);
-
-    const theme_toggle_button_elem = document.getElementById("theme-toggle") ?? assertElementExists("theme-toggle");
-
-    theme_toggle_button_elem.addEventListener("click", () => {
-        if (theme === "dark") {
-            theme = "light";
-        } else if (theme === "light") {
-            theme = "dark";
-        } else {
-            throw new Error("assert can only be \"light\" or \"dark\"");
-        }
-        setTheme(theme);
-    });
+    theme.build("theme-toggle");
 
     // navbar
     const navbar_toggle_button_elem = document.getElementById("navbar-toggle-button") ?? assertElementExists("navbar-toggle-button");
