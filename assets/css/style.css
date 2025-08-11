@@ -87,6 +87,10 @@ a:hover {
     text-decoration-line: underline;
 }
 
+.hidden {
+    display: none;
+}
+
 .main-fg-color {
     color: var(--fg-50);
 }
