@@ -3,16 +3,17 @@
 
 import { Timeout } from '../utils/timeout';
 
-export class CustomWebSocket {
+export class CustomWebSocket extends EventTarget {
     /** @type {WebSocket | null} */
     #websocket;
     /** @type {Timeout} */
     #disconnect_timeout
     /** @type {string} */
-    url
+    url;
 
     /** @param {string} url */
     constructor(url) {
+        super();
         this.url = url;
         this.#disconnect_timeout = new Timeout(null);
         this.#websocket = null;
@@ -31,11 +32,7 @@ export class CustomWebSocket {
 
     /** @param {Event} _event */
     #onOpen(_event) {
-        const refresh_button_elem = document.getElementById("refresh");
-        if (refresh_button_elem === null) {
-            return;
-        }
-        /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = false;
+        this.dispatchEvent(new CustomEvent("open"))
     }
 
     /** @param {MessageEvent<any>} event */
@@ -53,15 +50,9 @@ export class CustomWebSocket {
         if (Number.isNaN(msg_as_number)) {
             throw Error("Unexpected WebSocket message recieved");
         } else if (msg_as_number < 0) {
-            user_count = msg_as_number * -1;
-            const user_count_elem = document.getElementById("user-count");
-            if (user_count_elem !== null) {
-                user_count_elem.textContent = String(user_count);
-            }
+            this.dispatchEvent(new CustomEvent("updateusercount", { detail: msg_as_number * -1 }))
         } else {
-            datetime = new Date(msg_as_number * 1000);
-            datetime_display.updateDatetime(datetime);
-            countdown_display.updateDatetimeTarget(datetime);
+            this.dispatchEvent(new CustomEvent("updatedatetime", { detail: new Date(msg_as_number * 1000) }))
         }
     }
 
@@ -74,6 +65,8 @@ export class CustomWebSocket {
         this.#websocket.removeEventListener("open", this.#onOpen);
         this.#websocket.removeEventListener("close", this.#onClose);
         this.#websocket.removeEventListener("error", this.#onError);
+
+        this.dispatchEvent(new CustomEvent("close"));
     }
 
     // TODO: Add popup notif to inform that websocket had error
@@ -82,13 +75,6 @@ export class CustomWebSocket {
         this.tryDisconnect();
         console.log("Error connecting to websocket. Reconnecting in 2 seconds.");
         setTimeout(this.tryConnect.bind(this), 2000);
-
-        const refresh_button_elem = document.getElementById("refresh");
-
-        if (refresh_button_elem === null) {
-            return;
-        }
-        /** @type {HTMLButtonElement} */(refresh_button_elem).disabled = true;
     }
 
     tryConnect() {

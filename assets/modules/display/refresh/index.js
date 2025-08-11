@@ -1,51 +1,47 @@
 // @ts-check
 "use strict";
 
+import { assertTagName, unwrapSome } from '../../utils/assert';
 import { Timeout } from '../../utils/timeout';
-import { UserStatistic } from '../userStatistics';
 
 const REFRESH_BUTTON_TIMEOUT_DURATION = 300;
 
-export class RefreshButton {
+export class RefreshButton extends EventTarget {
     /** @type {HTMLButtonElement} */
-    #elem;
+    #button;
     /** @type {SVGElement} */
     #svg_elem;
-
-    /** @type {UserStatistic} */
-    #user_statistic
 
     /** @type {Timeout} */
     #reset_rotation_timeout;
     /** @type {number} */
     #rotation;
-    // /** @type {number} */
-    // #num_clicks;
 
-    /**
-     * @param {HTMLButtonElement} elem
-     * @param {SVGElement} svg_elem
-     */
-    constructor(elem, svg_elem) {
-        this.#elem = elem;
-        this.#svg_elem = svg_elem;
-        this.#user_statistic = new UserStatistic();
+    /** @param {string} refresh_button_id */
+    constructor(refresh_button_id) {
+        super();
+        this.#button = unwrapSome(assertTagName(document.getElementById(refresh_button_id), 'button'));
+        this.#svg_elem = unwrapSome(document.querySelector(`#${refresh_button_id}>svg`));
         this.#rotation = 0;
         this.#reset_rotation_timeout = new Timeout(this.#resetRotation.bind(this), REFRESH_BUTTON_TIMEOUT_DURATION);
     }
 
-    #onClick() {
-        if (websocket.state() === WebSocket.OPEN) {
-            websocket.incrementDatetime();
-            this.#animateClickRotation();
-            if (this.#elem.disabled) {
-                this.#elem.disabled = false;
-            }
+    #onRefresh() {
+        this.dispatchEvent(new CustomEvent("click"));
 
-            this.#user_statistic.incrementClickCount();
+        this.#animateClickRotation();
+        this.enable();
+    }
 
-        } else if (websocket.state() === WebSocket.CLOSED) {
-            websocket.tryConnect();
+    disable() {
+        if (!this.#button.disabled) {
+            this.#button.disabled = true;
+        }
+    }
+
+    enable() {
+        if (this.#button.disabled) {
+            this.#button.disabled = false;
         }
     }
 
@@ -94,23 +90,22 @@ export class RefreshButton {
     }
 
     build() {
-        /** @type {HTMLButtonElement} */(this.#elem).disabled = true;
-
-        this.#elem.addEventListener("click", this.#onClick.bind(this));
+        // /** @type {HTMLButtonElement} */(this.#elem).disabled = true;
+        this.#button.addEventListener("click", this.#onRefresh.bind(this));
 
         // Prevent 'Enter' key from repeatedly pressing button when held down
-        this.#elem.addEventListener("keyup", (event) => {
+        this.#button.addEventListener("keyup", (event) => {
             if (event.key === "Enter") {
-                this.#onClick();
+                this.#onRefresh();
             }
         })
-        this.#elem.addEventListener("keydown", (event) => {
+        this.#button.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 event.preventDefault();
             }
         })
 
-        this.#user_statistic.build();
+        this.enable();
     }
 }
 
