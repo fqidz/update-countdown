@@ -64,7 +64,11 @@ export class UserStatistic {
     #getAddedMinutes() {
         // Add 25-35 minutes at the end to fake some randomness
         const random_minutes = Math.random() * 10 + 25;
-        return (this.#click_count - 1) * MINUTES_PER_CLICK + random_minutes;
+        if (this.#click_count === 0) {
+            return 0;
+        } else {
+            return (this.#click_count - 1) * MINUTES_PER_CLICK + random_minutes;
+        }
     }
 
     cycleState() {
