@@ -10,6 +10,7 @@ import { assertElementExists } from '../modules/utils/assert';
 import { countdownElems } from '../modules/display/countdown/elems';
 import { isOnPhone } from '../modules/utils/mediaQuery';
 import { theme } from '../modules/display/theme';
+import { navbar } from '../modules/display/navbar';
 
 // TODO: use IndexedDB instead of local storage
 
@@ -84,17 +85,7 @@ function lightDismiss(event) {
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
     theme.build("theme-toggle");
-
-    // navbar
-    const navbar_toggle_button_elem = document.getElementById("navbar-toggle-button") ?? assertElementExists("navbar-toggle-button");
-
-    let is_navbar_open = !isOnPhone();
-    navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
-
-    navbar_toggle_button_elem.addEventListener("click", () => {
-        is_navbar_open = !is_navbar_open;
-        navbar_toggle_button_elem.ariaExpanded = is_navbar_open.toString();
-    })
+    navbar.build("navbar-toggle-button");
 
     // info modal
     const info_button_elem = document.getElementById("info-button") ?? assertElementExists("info-button");
