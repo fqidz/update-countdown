@@ -46,11 +46,22 @@ function checkBrowserSupportsInactiveTabTimeout() {
 let is_document_visible = false;
 const websocket = new CustomWebSocket("battlebit/websocket");
 
+function executeOnHashUrl() {
+    if (window.location.hash === "#info" || window.location.hash === "#what") {
+        modal.show("info-modal");
+    } else {
+        modal.close("info-modal");
+    }
+}
+
 // main
 document.addEventListener("DOMContentLoaded", (_event) => {
     theme.build("theme-toggle");
     navbar.build("navbar-toggle-button");
     modal.build("info-modal", "info-button", "info-modal-close-button");
+
+    executeOnHashUrl();
+    window.addEventListener("popstate", executeOnHashUrl);
 
     const datetime_elem = unwrapSome(document.getElementById("datetime"));
     const datetime = new Date(Number(datetime_elem.textContent) * 1000);
