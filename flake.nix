@@ -28,8 +28,8 @@
 
               pkgs.cargo
               pkgs.rustc
-              pkgs.esbuild
 
+              pkgs.esbuild
               pkgs.minify
               pkgs.upx
 
@@ -37,7 +37,6 @@
               pkgs.chromium
               pkgs.oha
               pkgs.cargo-expand
-              # pkgs.python3Packages.locust
 
               pkgs.lld
             ];
@@ -49,6 +48,7 @@
               pkgs.cargo
               pkgs.rustc
 
+              pkgs.esbuild
               pkgs.minify
               pkgs.upx
 
