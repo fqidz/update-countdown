@@ -110,17 +110,17 @@ export const countdownElems = {
                 container.innerHTML = `<span id="countdown-days"></span
                     ><span id="days-label">D</span
                     ><div id="hours-container"
-                        ><span id="hours-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="hours-spacer" class="spacer" aria-hidden="true"></span
                         ><span id="countdown-hours"></span
                     ></div
                     ><span id="hours-label">H</span
                     ><div id="minutes-container"
-                        ><span id="minutes-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="minutes-spacer" class="spacer" aria-hidden="true"></span
                         ><span id="countdown-minutes"></span
                     ></div
                     ><span id="minutes-label">M</span
                     ><div id="seconds-container"
-                        ><span id="seconds-spacer" class="spacer" ariaHidden="true"></span
+                        ><span id="seconds-spacer" class="spacer" aria-hidden="true"></span
                         ><span id="countdown-seconds"></span
                     ></div
                     ><span id="seconds-label">S</span>`;

@@ -296,11 +296,18 @@ a:hover {
 
 #refresh>svg {
     fill: var(--fg-50);
+    transition: fill 150ms ease-in;
 }
 
 #refresh:disabled {
     cursor: unset;
 }
+
+#refresh:disabled>svg {
+    fill: var(--bg-300);
+    transition: fill 150ms ease-out;
+}
+
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
@@ -309,18 +316,10 @@ a:hover {
     #datetime,
     #theme-toggle,
     #refresh,
+    #user-statistic,
     #info-button,
     #info-modal-close-button {
         transition: filter 150ms ease-in;
-    }
-
-    #refresh>svg {
-        transition: fill 150ms ease-in;
-    }
-
-    #refresh:disabled>svg {
-        fill: var(--bg-300);
-        transition: fill 150ms ease-out;
     }
 
     /* On `Blocky` display, only select the actual countdown numbers and not
@@ -333,13 +332,14 @@ a:hover {
 
     #datetime:hover,
     #theme-toggle:hover,
+    #user-statistic:hover,
     #info-button:hover,
     #info-modal-close-button:hover {
         filter: brightness(80%);
         transition: filter 75ms ease-out;
     }
 
-    #refresh:hover:enabled>svg {
+    #refresh:enabled:hover>svg {
         filter: brightness(75%);
         transition:
             filter 50ms linear,

@@ -64,6 +64,7 @@ export const userStatisticElems = {
         const container = this.get("container");
         switch (state) {
             case UserStatisticState.AddedDuration: {
+                container.title = "Added duration";
                 container.innerHTML = `
                     <span id="statistic-year" class="hidden">0Y</span
                     ><span id="statistic-month" class="hidden">0M</span
@@ -75,6 +76,7 @@ export const userStatisticElems = {
                 break;
             }
             case UserStatisticState.ClickCount: {
+                container.title = "Refresh click count";
                 container.innerHTML = `<span id="statistic-click"></span>`;
                 break;
             }
