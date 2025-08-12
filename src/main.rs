@@ -80,7 +80,7 @@ async fn main() {
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.0:7171").await.unwrap();
 
     let save_interval_task = tokio::spawn({
         let mut save_interval = interval(Duration::from_secs(60 * 5));
@@ -97,16 +97,15 @@ async fn main() {
         }
     });
 
+    eprintln!("Listening on {}", &listener.local_addr().unwrap());
     let serve_task = axum::serve(listener, app).with_graceful_shutdown(shutdown_signal());
-
-    eprintln!("Server on");
 
     tokio::select! {
         _ = serve_task => {}
         _ = save_interval_task => {}
     }
 
-    eprintln!("\nServer shutting down...");
+    eprintln!("\nShutting down...");
     eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
     state.save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");
