@@ -6,19 +6,18 @@ use std::sync::atomic::AtomicU32;
 use std::time::Duration;
 
 use chrono::{DateTime, Local, Utc};
-use hashbrown::HashMap;
+use dashmap::DashMap;
 
 use axum::Router;
 use axum::response::Redirect;
 use axum::routing::{get, get_service};
 
 use tokio::signal;
-use tokio::sync::{RwLock, broadcast};
+use tokio::sync::broadcast;
 use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 use crate::routes::{battlebit, websocket_handler};
-
 
 const SAVE_FILE_PATH: &str = "save.json";
 
@@ -30,35 +29,33 @@ const SAVE_FILE_PATH: &str = "save.json";
 
 // TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so.
 struct AppState {
-    datetimes: RwLock<HashMap<String, DateTime<Utc>>>,
-    user_count: Arc<HashMap<String, AtomicU32>>,
+    datetimes: DashMap<String, DateTime<Utc>>,
+    user_count: DashMap<String, AtomicU32>,
     tx: broadcast::Sender<i64>,
 }
 
 impl AppState {
     fn load(path: impl AsRef<std::path::Path>, tx: broadcast::Sender<i64>) -> Self {
         let file_contents = fs::read_to_string(path).unwrap();
-        let datetimes: HashMap<String, DateTime<Utc>> =
+        let datetimes: DashMap<String, DateTime<Utc>> =
             serde_json::from_str(&file_contents).unwrap();
 
         let mut names = Vec::new();
-        for k in datetimes.clone().into_keys() {
-            names.push(k);
+        for e in datetimes.iter() {
+            names.push(e.key().clone());
         }
         Self {
-            datetimes: RwLock::new(datetimes),
-            user_count: Arc::new(
-                names
-                    .iter()
-                    .map(|name| (name.to_string(), AtomicU32::new(0)))
-                    .collect::<HashMap<_, _>>(),
-            ),
+            datetimes: datetimes,
+            user_count: names
+                .iter()
+                .map(|name| (name.to_string(), AtomicU32::new(0)))
+                .collect::<DashMap<_, _>>(),
             tx,
         }
     }
 
     async fn save(&self, path: impl AsRef<std::path::Path>) {
-        let contents = serde_json::to_string_pretty(&*self.datetimes.read().await).unwrap();
+        let contents = serde_json::to_string_pretty(&self.datetimes).unwrap();
         fs::write(path, contents).unwrap();
     }
 }

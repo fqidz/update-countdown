@@ -1,16 +1,16 @@
 use std::ops::Range;
-use std::{sync::Arc, time::Duration};
 use std::sync::atomic::{AtomicI64, AtomicU8, Ordering};
+use std::{sync::Arc, time::Duration};
 
 use askama::Template;
-use axum::{body::Bytes, http::StatusCode};
-use axum::response::{Html, IntoResponse};
-use axum::extract::{State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{State, WebSocketUpgrade};
+use axum::response::{Html, IntoResponse};
+use axum::{body::Bytes, http::StatusCode};
 
 use futures::{SinkExt, stream::StreamExt};
 use rand::distr::Distribution;
-use rand::{distr::Uniform, rngs::SmallRng, SeedableRng};
+use rand::{SeedableRng, distr::Uniform, rngs::SmallRng};
 use tokio::time::interval;
 
 use crate::AppState;
@@ -37,12 +37,9 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
-    let datetime_read = state.datetimes.read().await;
     let last_timestamp_recieved = Arc::new(AtomicI64::new(
-        datetime_read.get("battlebit").unwrap().timestamp(),
+        state.datetimes.get("battlebit").unwrap().timestamp(),
     ));
-
-    drop(datetime_read);
 
     let mut recieve_task = tokio::spawn({
         let tx = state.tx.clone();
@@ -63,8 +60,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                 if !msg.is_empty() {
                     break;
                 }
-                let mut datetime_write = state_cloned.datetimes.write().await;
-                let datetime = datetime_write.get_mut("battlebit").unwrap();
+                let mut datetime = state_cloned.datetimes.get_mut("battlebit").unwrap();
 
                 let secs = secs_range.sample(&mut rng);
                 *datetime += Duration::from_secs(secs);
@@ -158,8 +154,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 }
 
 pub async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let datetime_read = state.datetimes.read().await;
-    let datetime = datetime_read.get("battlebit").unwrap();
+    let datetime = state.datetimes.get("battlebit").unwrap();
 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
