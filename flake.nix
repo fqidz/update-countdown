@@ -37,6 +37,8 @@
               pkgs.chromium
               pkgs.oha
               pkgs.cargo-expand
+              pkgs.cargo-flamegraph
+              pkgs.tokio-console
 
               pkgs.lld
             ];
