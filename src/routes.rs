@@ -29,7 +29,8 @@ pub async fn websocket_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| websocket(socket, state))
+    ws.max_message_size((i64::BITS * 2).try_into().unwrap())
+        .on_upgrade(|socket| websocket(socket, state))
 }
 
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
