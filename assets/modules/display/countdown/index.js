@@ -15,6 +15,7 @@ import { countdownElems } from "./elems";
 // when "extracting" it from the css
 const DISPLAY_VW = 80;
 const DISPLAY_VH = 50;
+const DISPLAY_VH_PHONE = 40;
 
 /** Logic for `CountdownDisplay` */
 class Countdown extends EventTarget {
@@ -430,7 +431,10 @@ export class CountdownDisplay {
         }
 
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DISPLAY_VW) / text_len)}vw`;
-        const font_size_vh = `${String((FONT_SIZE_VH_RATIO * DISPLAY_VH) / text_num_lines)}vh`;
+
+        let display_vh = isOnPhone() ? DISPLAY_VH_PHONE : DISPLAY_VH;
+        const font_size_vh = `${String((FONT_SIZE_VH_RATIO * display_vh) / text_num_lines)}vh`;
+
         const countdown_elem = countdownElems.get("container");
 
         switch (this.state.state) {

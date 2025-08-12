@@ -71,6 +71,8 @@ document.addEventListener("DOMContentLoaded", (_event) => {
     const refresh_button = new RefreshButton("refresh");
     const user_statistic = new UserStatistic();
 
+    const user_count_elem = unwrapSome(document.getElementById("user-count"));
+
     datetime_display.init();
     countdown_display.start();
     refresh_button.build();
@@ -91,6 +93,7 @@ document.addEventListener("DOMContentLoaded", (_event) => {
 
     websocket.addEventListener("close", () => {
         refresh_button.disable();
+        user_count_elem.textContent = "-";
     });
 
     websocket.addEventListener("updatedatetime", (event) => {
@@ -101,7 +104,6 @@ document.addEventListener("DOMContentLoaded", (_event) => {
         countdown_display.updateDatetimeTarget(datetime);
     });
 
-    const user_count_elem = unwrapSome(document.getElementById("user-count"));
     websocket.addEventListener("updateusercount", (event) => {
         const user_count = /** @type {CustomEvent} */ (event).detail;
         user_count_elem.textContent = String(user_count);
