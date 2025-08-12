@@ -39,18 +39,18 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
     let last_timestamp_recieved = Arc::new(AtomicI64::new(
-        state.datetimes.get("battlebit").unwrap().timestamp(),
+        state.clone().datetimes.get("battlebit").unwrap().timestamp(),
     ));
 
     let mut recieve_task = tokio::spawn({
-        let tx = state.tx.clone();
-        let user_count = state
+        let state_cloned = state.clone();
+        let tx = state_cloned.tx.clone();
+        let user_count = state_cloned
             .user_count
             .get("battlebit")
             .unwrap()
             .fetch_add(1, Ordering::Relaxed)
             .saturating_add(1);
-        let state_cloned = state.clone();
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
