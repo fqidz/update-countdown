@@ -39,9 +39,10 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
-    let page_state = state.page_states.get("battlebit").unwrap();
+    let read_lock = state.page_states.read().await;
+    let page_state = read_lock.get("battlebit").unwrap();
     let last_timestamp_recieved = Arc::new(AtomicI64::new(page_state.datetime.timestamp()));
-    drop(page_state);
+    drop(read_lock);
 
     let mut recieve_task = tokio::spawn({
         let state_cloned = state.clone();
@@ -49,24 +50,26 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
-            let mut page_state = state_cloned.page_states.get_mut("battlebit").unwrap();
-            page_state.add_user_count(1);
+            let mut write_lock = state_cloned.page_states.write().await;
+            let page_state = write_lock.get_mut("battlebit").unwrap();
+            page_state.user_count += 1;
 
             // Send incremented user count
             tx.send(page_state.user_count as i64 * -1).unwrap();
+            drop(write_lock);
 
             while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
+                let mut write_lock = state_cloned.page_states.write().await;
+                let page_state = write_lock.get_mut("battlebit").unwrap();
                 if !msg.is_empty() {
                     break;
                 }
-                // TODO: use checked_add_signed
-                let mut datetime = page_state.datetime;
 
                 let secs = secs_range.sample(&mut rng);
-                datetime = datetime
+                page_state.datetime = page_state.datetime
                     .checked_add_signed(TimeDelta::seconds(secs))
                     .unwrap();
-                tx.send(datetime.timestamp()).unwrap();
+                tx.send(page_state.datetime.timestamp()).unwrap();
             }
         }
     });
@@ -142,10 +145,11 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     // Decrement & broadcast/send updated user_count
     let tx = state.tx.clone();
-    let mut page_state = state.page_states.get_mut("battlebit").unwrap();
+    let mut write_lock = state.page_states.write().await;
+    let page_state = write_lock.get_mut("battlebit").unwrap();
     // let mut user_count = page_state.user_count;
 
-    page_state.add_user_count(-1);
+    page_state.user_count -= 1;
     // *user_count.value_mut() -= 1;
 
     // Send user count as a negative number
@@ -154,14 +158,15 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 }
 
 pub async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let datetime = state.page_states.get("battlebit").unwrap().datetime;
+    let mut write_lock = state.page_states.write().await;
+    let page_state = write_lock.get_mut("battlebit").unwrap();
+    let datetime = page_state.datetime;
 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
         datetime: datetime.timestamp(),
     };
 
-    println!("served");
     let html = template.render().unwrap();
     (StatusCode::OK, Html(html)).into_response()
 }

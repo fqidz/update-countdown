@@ -12,9 +12,10 @@ use axum::Router;
 use axum::response::Redirect;
 use axum::routing::{get, get_service};
 
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use tokio::signal;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, RwLock};
 use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
@@ -40,19 +41,19 @@ struct PageState {
     click_count: i64,
 }
 
-impl PageState {
-    fn add_user_count(&mut self, value: i32) {
-        self.user_count += value;
-    }
-
-    fn add_click_count(&mut self, value: i64) {
-        self.click_count += value;
-    }
-}
+// impl PageState {
+//     fn add_user_count(&mut self, value: i32) {
+//         self.user_count += value;
+//     }
+//
+//     fn add_click_count(&mut self, value: i64) {
+//         self.click_count += value;
+//     }
+// }
 
 // TODO: Fix this? Is it good to split them up to different hashmaps?
 struct AppState {
-    page_states: Arc<DashMap<String, PageState>>,
+    page_states: RwLock<HashMap<String, PageState>>,
     // datetimes: Arc<DashMap<String, DateTime<Utc>>>,
     // click_counts: Arc<DashMap<String, u64>>,
     // user_counts: Arc<DashMap<String, u32>>,
@@ -62,7 +63,7 @@ struct AppState {
 impl AppState {
     fn load(path: impl AsRef<std::path::Path>, tx: broadcast::Sender<i64>) -> Self {
         let file_contents = fs::read_to_string(path).unwrap();
-        let page_states: DashMap<String, PageState> = serde_json::from_str(&file_contents).unwrap();
+        let page_states: HashMap<String, PageState> = serde_json::from_str(&file_contents).unwrap();
         // let (datetimes, click_counts, user_counts) = contents
         //     .into_iter()
         //     .map(|(k, v)| {
@@ -75,7 +76,7 @@ impl AppState {
         //     .collect::<(DashMap<_, _>, DashMap<_, _>, DashMap<_, _>)>();
 
         Self {
-            page_states: Arc::new(page_states),
+            page_states: RwLock::new(page_states),
             // datetimes: Arc::new(datetimes),
             // click_counts: Arc::new(click_counts),
             // user_counts: Arc::new(user_counts),
@@ -98,24 +99,23 @@ impl AppState {
         //         )
         //     })
         //     .collect::<HashMap<_, _>>();
-        let contents_serialized = serde_json::to_string_pretty(&self.page_states).unwrap();
+        let contents_serialized = serde_json::to_string_pretty(&*self.page_states.read().await).unwrap();
         fs::write(path, contents_serialized).unwrap();
     }
 
     async fn get_time_series_data_entry(&self) -> Vec<TimeSeriesDataEntry> {
         println!("entered");
         let res = self
-            .page_states
-            .clone()
+            .page_states.read()
+            .await
             .iter()
-            .map(|e| {
-                let page_state = e.value();
+            .map(|(name, state)| {
                 TimeSeriesDataEntry {
-                    page_name: e.key().clone(),
-                    datetime: page_state.datetime,
+                    page_name: name.to_string(),
+                    datetime: state.datetime,
                     timestamp: Utc::now(),
-                    user_count: page_state.user_count,
-                    click_count: page_state.click_count,
+                    user_count: state.user_count,
+                    click_count: state.click_count,
                 }
             })
             .collect::<Vec<_>>();
@@ -161,7 +161,7 @@ impl AppState {
 
 #[tokio::main]
 async fn main() {
-    console_subscriber::init();
+    // console_subscriber::init();
     let (tx, _rx) = broadcast::channel::<i64>(20000);
     let state = Arc::new(AppState::load(SAVE_FILE_PATH, tx));
 
