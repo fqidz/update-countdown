@@ -1,5 +1,5 @@
 use std::ops::Range;
-use std::sync::atomic::{AtomicI64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 use std::{sync::Arc, time::Duration};
 
 use askama::Template;
@@ -39,6 +39,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
+    let has_incremented_user_count = Arc::new(AtomicBool::new(false));
     let read_lock = state.page_states.read().await;
     let page_state = read_lock.get("battlebit").unwrap();
     let last_timestamp_recieved = Arc::new(AtomicI64::new(page_state.datetime.timestamp()));
@@ -49,10 +50,12 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         let tx = state_cloned.tx.clone();
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
+        let incremented_user_count = has_incremented_user_count.clone();
         async move {
             let mut write_lock = state_cloned.page_states.write().await;
             let page_state = write_lock.get_mut("battlebit").unwrap();
             page_state.user_count += 1;
+            incremented_user_count.store(true, Ordering::SeqCst);
 
             // Send incremented user count
             tx.send(page_state.user_count as i64 * -1).unwrap();
@@ -62,8 +65,10 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                 let mut write_lock = state_cloned.page_states.write().await;
                 let page_state = write_lock.get_mut("battlebit").unwrap();
                 if !msg.is_empty() {
-                    break;
+                    continue;
                 }
+
+                page_state.click_count += 1;
 
                 let secs = secs_range.sample(&mut rng);
                 page_state.datetime = page_state.datetime
@@ -143,13 +148,15 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         _ = &mut recieve_task => send_task.abort(),
     };
 
-    // Decrement & broadcast/send updated user_count
-    let tx = state.tx.clone();
-    let mut write_lock = state.page_states.write().await;
-    let page_state = write_lock.get_mut("battlebit").unwrap();
+    if has_incremented_user_count.load(Ordering::SeqCst) {
+        // Decrement & broadcast/send updated user_count
+        let tx = state.tx.clone();
+        let mut write_lock = state.page_states.write().await;
+        let page_state = write_lock.get_mut("battlebit").unwrap();
 
-    page_state.user_count -= 1;
-    tx.send(page_state.user_count as i64 * -1).unwrap();
+        page_state.user_count -= 1;
+        tx.send(page_state.user_count as i64 * -1).unwrap();
+    }
 }
 
 pub async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse {
