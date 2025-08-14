@@ -147,13 +147,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let tx = state.tx.clone();
     let mut write_lock = state.page_states.write().await;
     let page_state = write_lock.get_mut("battlebit").unwrap();
-    // let mut user_count = page_state.user_count;
 
     page_state.user_count -= 1;
-    // *user_count.value_mut() -= 1;
-
-    // Send user count as a negative number
-    // let user_count = *user_count.value() as i64 * -1;
     tx.send(page_state.user_count as i64 * -1).unwrap();
 }
 
