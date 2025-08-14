@@ -14,7 +14,7 @@ use axum::routing::{get, get_service};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use tokio::signal;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{RwLock, broadcast};
 use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
@@ -58,23 +58,22 @@ impl AppState {
     }
 
     async fn save(&self, path: impl AsRef<std::path::Path>) {
-        let contents_serialized = serde_json::to_string_pretty(&*self.page_states.read().await).unwrap();
+        let contents_serialized =
+            serde_json::to_string_pretty(&*self.page_states.read().await).unwrap();
         fs::write(path, contents_serialized).unwrap();
     }
 
     async fn get_time_series_data_entry(&self) -> Vec<TimeSeriesDataEntry> {
-        self
-            .page_states.read()
+        self.page_states
+            .read()
             .await
             .iter()
-            .map(|(name, state)| {
-                TimeSeriesDataEntry {
-                    page_name: name.to_string(),
-                    datetime: state.datetime,
-                    timestamp: Utc::now(),
-                    user_count: state.user_count,
-                    click_count: state.click_count,
-                }
+            .map(|(name, state)| TimeSeriesDataEntry {
+                page_name: name.to_string(),
+                datetime: state.datetime,
+                timestamp: Utc::now(),
+                user_count: state.user_count,
+                click_count: state.click_count,
             })
             .collect::<Vec<_>>()
     }
@@ -103,9 +102,7 @@ async fn main() {
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:7171")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:7171").await.unwrap();
 
     let mut save_interval_task = tokio::spawn({
         let mut save_interval = interval(Duration::from_secs(60 * 5));

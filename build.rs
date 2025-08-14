@@ -36,7 +36,10 @@ fn main() {
         .arg("--bundle")
         .arg("--minify")
         .arg("--target=es2020")
-        .arg(format!("--outdir={}", &output_path.join("assets").to_str().unwrap()))
+        .arg(format!(
+            "--outdir={}",
+            &output_path.join("assets").to_str().unwrap()
+        ))
         .status()
         .unwrap();
 

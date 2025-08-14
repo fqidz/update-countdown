@@ -71,7 +71,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                 page_state.click_count += 1;
 
                 let secs = secs_range.sample(&mut rng);
-                page_state.datetime = page_state.datetime
+                page_state.datetime = page_state
+                    .datetime
                     .checked_add_signed(TimeDelta::seconds(secs))
                     .unwrap();
                 tx.send(page_state.datetime.timestamp()).unwrap();
