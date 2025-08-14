@@ -45,14 +45,8 @@ pub async fn insert_time_series_page_data(
     data: Vec<TimeSeriesDataEntry>,
 ) -> Result<(), sqlx::Error> {
     // https://github.com/launchbadge/sqlx/blob/main/FAQ.md#how-can-i-bind-an-array-to-a-values-clause-how-can-i-do-bulk-inserts
-    let timestamps = data
-        .iter()
-        .map(|e| e.timestamp.naive_utc())
-        .collect::<Vec<_>>();
-    let datetime = data
-        .iter()
-        .map(|e| e.datetime.naive_utc())
-        .collect::<Vec<_>>();
+    let timestamps = data.iter().map(|e| e.timestamp).collect::<Vec<_>>();
+    let datetime = data.iter().map(|e| e.datetime).collect::<Vec<_>>();
     let click_count = data
         .iter()
         .map(|e| e.click_count as i64)

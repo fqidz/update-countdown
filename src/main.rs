@@ -5,7 +5,7 @@ use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 
 use axum::Router;
 use axum::response::Redirect;
@@ -23,11 +23,10 @@ use crate::routes::{battlebit, websocket_handler};
 
 const SAVE_FILE_PATH: &str = "save.json";
 
-// TODO: use naivedatetime
 pub struct TimeSeriesDataEntry {
     pub page_name: String,
-    pub datetime: DateTime<Utc>,
-    pub timestamp: DateTime<Utc>,
+    pub datetime: NaiveDateTime,
+    pub timestamp: NaiveDateTime,
     pub user_count: i32,
     pub click_count: i64,
 }
@@ -40,7 +39,6 @@ struct PageState {
     click_count: i64,
 }
 
-// TODO: Fix this? Is it good to split them up to different hashmaps?
 struct AppState {
     page_states: RwLock<HashMap<String, PageState>>,
     tx: broadcast::Sender<i64>,
@@ -70,8 +68,8 @@ impl AppState {
             .iter()
             .map(|(name, state)| TimeSeriesDataEntry {
                 page_name: name.to_string(),
-                datetime: state.datetime,
-                timestamp: Utc::now(),
+                datetime: state.datetime.naive_utc(),
+                timestamp: Utc::now().naive_utc(),
                 user_count: state.user_count,
                 click_count: state.click_count,
             })
