@@ -2,7 +2,6 @@ mod routes;
 
 use std::fs;
 use std::sync::Arc;
-use std::sync::atomic::AtomicU32;
 use std::time::Duration;
 
 use chrono::{DateTime, Local, Utc};
@@ -30,7 +29,7 @@ const SAVE_FILE_PATH: &str = "save.json";
 // TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so.
 struct AppState {
     datetimes: DashMap<String, DateTime<Utc>>,
-    user_count: DashMap<String, AtomicU32>,
+    user_count: DashMap<String, u32>,
     tx: broadcast::Sender<i64>,
 }
 
@@ -48,7 +47,7 @@ impl AppState {
             datetimes: datetimes,
             user_count: names
                 .iter()
-                .map(|name| (name.to_string(), AtomicU32::new(0)))
+                .map(|name| (name.to_string(), 0))
                 .collect::<DashMap<_, _>>(),
             tx,
         }
@@ -80,7 +79,7 @@ async fn main() {
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.0:7171").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:7171").await.unwrap();
 
     let save_interval_task = tokio::spawn({
         let mut save_interval = interval(Duration::from_secs(60 * 5));

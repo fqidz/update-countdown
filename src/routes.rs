@@ -39,23 +39,25 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let num_messages_recieved = Arc::new(AtomicU8::new(0));
 
     let last_timestamp_recieved = Arc::new(AtomicI64::new(
-        state.clone().datetimes.get("battlebit").unwrap().timestamp(),
+        state
+            .clone()
+            .datetimes
+            .get("battlebit")
+            .unwrap()
+            .timestamp(),
     ));
 
     let mut recieve_task = tokio::spawn({
         let state_cloned = state.clone();
         let tx = state_cloned.tx.clone();
-        let user_count = state_cloned
-            .user_count
-            .get("battlebit")
-            .unwrap()
-            .fetch_add(1, Ordering::Relaxed)
-            .saturating_add(1);
         let mut rng = SmallRng::from_os_rng();
         let secs_range = Uniform::try_from(SECS_INCREMENT_RANGE).unwrap();
         async move {
+            let mut user_count = state_cloned.user_count.get_mut("battlebit").unwrap();
+            *user_count.value_mut() += 1;
+
             // Send incremented user count
-            tx.send(user_count as i64 * -1).unwrap();
+            tx.send(*user_count.value() as i64 * -1).unwrap();
 
             while let Some(Ok(Message::Binary(msg))) = reciever.next().await {
                 if !msg.is_empty() {
@@ -141,16 +143,12 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     // Decrement & broadcast/send updated user_count
     let tx = state.tx.clone();
-    let user_count = state
-        .user_count
-        .get("battlebit")
-        .unwrap()
-        .fetch_sub(1, Ordering::Relaxed)
-        .checked_sub(1)
-        .expect("underflow");
+    let mut user_count = state.user_count.get_mut("battlebit").unwrap();
+
+    *user_count.value_mut() -= 1;
 
     // Send user count as a negative number
-    let user_count = (user_count as i64) * -1;
+    let user_count = *user_count.value() as i64 * -1;
     tx.send(user_count).unwrap();
 }
 
