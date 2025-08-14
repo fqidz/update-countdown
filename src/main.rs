@@ -1,3 +1,4 @@
+mod db;
 mod routes;
 
 use std::fs;
@@ -16,17 +17,18 @@ use tokio::sync::broadcast;
 use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
+use crate::db::{init_db, insert_time_series_page_data};
 use crate::routes::{battlebit, websocket_handler};
 
 const SAVE_FILE_PATH: &str = "save.json";
 
-// struct PageState {
-//     datetime: DateTime<Utc>,
-//     user_count: u32,
-//     refresh_clicks: u64,
-// }
+struct TimeSeriesDataEntry {
+    page_name: String,
+    time_collected: DateTime<Utc>,
+    user_count: u32,
+    refresh_clicks: u64,
+}
 
-// TODO: Collect statistics (i.e. user count, number of clicks, etc.) every minute or so.
 struct AppState {
     datetimes: DashMap<String, DateTime<Utc>>,
     user_count: DashMap<String, u32>,
@@ -57,12 +59,23 @@ impl AppState {
         let contents = serde_json::to_string_pretty(&self.datetimes).unwrap();
         fs::write(path, contents).unwrap();
     }
+
+    async fn get_time_series_data_entry(&self) -> Vec<TimeSeriesDataEntry> {
+        todo!()
+        // for e in self.datetimes.iter() {
+        //     let page_name = e.key();
+        // }
+        //
+        // vec![]
+    }
 }
 
 #[tokio::main]
 async fn main() {
     let (tx, _rx) = broadcast::channel::<i64>(20000);
     let state = Arc::new(AppState::load(SAVE_FILE_PATH, tx));
+
+    let db_pool = init_db().await.unwrap();
 
     let compression_layer = CompressionLayer::new()
         .br(true)
@@ -79,9 +92,11 @@ async fn main() {
         .layer(compression_layer)
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:7171").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:7171")
+        .await
+        .unwrap();
 
-    let save_interval_task = tokio::spawn({
+    let mut save_interval_task = tokio::spawn({
         let mut save_interval = interval(Duration::from_secs(60 * 5));
         // Do this because first tick completes immediately
         save_interval.tick().await;
@@ -96,15 +111,33 @@ async fn main() {
         }
     });
 
+    let mut insert_time_series_data_task = tokio::spawn({
+        let mut interval = interval(Duration::from_secs(2));
+        // Do this because first tick completes immediately
+        interval.tick().await;
+        let state_cloned = state.clone();
+        async move {
+            loop {
+                interval.tick().await;
+                let data = state_cloned.get_time_series_data_entry().await;
+                insert_time_series_page_data(&db_pool, data).await.unwrap();
+            }
+        }
+    });
+
     eprintln!("Listening on {}", &listener.local_addr().unwrap());
     let serve_task = axum::serve(listener, app).with_graceful_shutdown(shutdown_signal());
 
     tokio::select! {
-        _ = serve_task => {}
-        _ = save_interval_task => {}
+        _ = serve_task => {
+            save_interval_task.abort();
+            insert_time_series_data_task.abort();
+        }
+        _ = &mut save_interval_task => insert_time_series_data_task.abort(),
+        _ = &mut insert_time_series_data_task => save_interval_task.abort(),
     }
 
-    eprintln!("\nShutting down...");
+    eprintln!("\nShutting down");
     eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
     state.save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");

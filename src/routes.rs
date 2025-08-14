@@ -63,6 +63,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
                 if !msg.is_empty() {
                     break;
                 }
+                // TODO: use checked_add_signed
                 let mut datetime = state_cloned.datetimes.get_mut("battlebit").unwrap();
 
                 let secs = secs_range.sample(&mut rng);
