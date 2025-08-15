@@ -8,7 +8,6 @@ use std::time::Duration;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 
 use axum::Router;
-use axum::response::Redirect;
 use axum::routing::{get, get_service};
 
 use hashbrown::HashMap;
@@ -19,7 +18,7 @@ use tokio::time::interval;
 use tower_http::{compression::CompressionLayer, services::ServeDir, timeout::TimeoutLayer};
 
 use crate::db::{init_db, insert_time_series_page_data};
-use crate::routes::{battlebit, websocket_handler};
+use crate::routes::{battlebit, root, websocket_handler};
 
 const SAVE_FILE_PATH: &str = "save.json";
 
@@ -162,10 +161,6 @@ async fn main() {
     eprintln!("Saving state to `{}`", SAVE_FILE_PATH);
     state.save(SAVE_FILE_PATH).await;
     eprintln!("State saved successfully");
-}
-
-async fn root() -> Redirect {
-    Redirect::temporary("/battlebit")
 }
 
 async fn shutdown_signal() {

@@ -5,7 +5,7 @@ use std::{sync::Arc, time::Duration};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
-use axum::response::{Html, IntoResponse};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::{body::Bytes, http::StatusCode};
 
 use chrono::TimeDelta;
@@ -24,6 +24,10 @@ const MAX_MESSAGES_PER_INTERVAL: u8 = 10;
 struct CountdownTemplate {
     title: String,
     datetime: i64,
+}
+
+pub async fn root() -> Redirect {
+    Redirect::temporary("/battlebit")
 }
 
 pub async fn websocket_handler(
