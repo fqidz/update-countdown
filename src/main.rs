@@ -23,12 +23,25 @@ use crate::routes::{battlebit, websocket_handler};
 
 const SAVE_FILE_PATH: &str = "save.json";
 
+/// Snapshot of a page's data at a specific timestamp
 pub struct TimeSeriesDataEntry {
     pub page_name: String,
     pub datetime: NaiveDateTime,
     pub timestamp: NaiveDateTime,
     pub user_count: i32,
     pub click_count: i64,
+}
+
+impl TimeSeriesDataEntry {
+    fn now(page_name: String, datetime: NaiveDateTime, user_count: i32, click_count: i64) -> Self {
+        Self {
+            page_name,
+            datetime,
+            timestamp: Utc::now().naive_utc(),
+            user_count,
+            click_count,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -61,17 +74,18 @@ impl AppState {
         fs::write(path, contents_serialized).unwrap();
     }
 
-    async fn get_time_series_data_entry(&self) -> Vec<TimeSeriesDataEntry> {
+    async fn get_time_series_data_entries(&self) -> Vec<TimeSeriesDataEntry> {
         self.page_states
             .read()
             .await
             .iter()
-            .map(|(name, state)| TimeSeriesDataEntry {
-                page_name: name.to_string(),
-                datetime: state.datetime.naive_utc(),
-                timestamp: Utc::now().naive_utc(),
-                user_count: state.user_count,
-                click_count: state.click_count,
+            .map(|(name, state)| {
+                TimeSeriesDataEntry::now(
+                    name.to_string(),
+                    state.datetime.naive_utc(),
+                    state.user_count,
+                    state.click_count,
+                )
             })
             .collect::<Vec<_>>()
     }
@@ -79,7 +93,6 @@ impl AppState {
 
 #[tokio::main]
 async fn main() {
-    // console_subscriber::init();
     let (tx, _rx) = broadcast::channel::<i64>(20000);
     let state = Arc::new(AppState::load(SAVE_FILE_PATH, tx));
 
@@ -93,6 +106,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
+        // TODO: Generalize these routes to work with any "game" page, so we can add more pages in
+        // the future.
         .route("/battlebit", get(battlebit))
         .route("/{game_name}/websocket", get(websocket_handler))
         .with_state(state.clone())
@@ -125,7 +140,7 @@ async fn main() {
         async move {
             loop {
                 interval.tick().await;
-                let data = state_cloned.get_time_series_data_entry().await;
+                let data = state_cloned.get_time_series_data_entries().await;
                 insert_time_series_page_data(&db_pool, data).await.unwrap();
             }
         }
