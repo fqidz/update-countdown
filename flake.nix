@@ -33,14 +33,12 @@
               pkgs.minify
               pkgs.upx
 
-              pkgs.biome
-              pkgs.chromium
-              pkgs.oha
-              pkgs.cargo-expand
-              pkgs.cargo-flamegraph
-              pkgs.tokio-console
-
-              pkgs.lld
+              # pkgs.biome
+              # pkgs.chromium
+              # pkgs.oha
+              # pkgs.cargo-expand
+              # pkgs.cargo-flamegraph
+              # pkgs.tokio-console
             ];
           };
 
@@ -53,8 +51,6 @@
               pkgs.esbuild
               pkgs.minify
               pkgs.upx
-
-              pkgs.lld
             ];
           };
 
