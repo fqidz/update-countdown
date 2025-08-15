@@ -1,4 +1,4 @@
-use std::{fs, path::Path, process::Command};
+use std::{fs, io, path::Path, process::Command};
 
 const ESBUILD_PATHS: &[&str] = &["assets/scripts", "assets/css"];
 const MINIFY_PATHS: &[&str] = &["templates"];
@@ -26,7 +26,7 @@ fn main() {
     }
 
     let output_path = Path::new(&output_path);
-    // Delete previous `OUTPUT_PATH` directory to avoid overwriting issues (probably).
+    // Delete previous `OUTPUT_PATH` directory to avoid overwriting issues.
     if output_path.is_dir() {
         fs::remove_dir_all(output_path).unwrap();
     }
@@ -52,12 +52,20 @@ fn main() {
         .status()
         .unwrap();
 
-    // TODO: use walkdir
-    Command::new("cp")
-        .arg("-r")
-        .arg("-t")
-        .arg(output_path.join("assets").to_str().unwrap())
-        .arg(FAVICONS_PATH)
-        .status()
-        .unwrap();
+    copy_dir_all(FAVICONS_PATH, output_path.join(FAVICONS_PATH)).unwrap();
+}
+
+/// https://stackoverflow.com/a/65192210/14306393
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    fs::create_dir_all(&dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
