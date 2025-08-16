@@ -8,6 +8,10 @@ export class CustomWebSocket extends EventTarget {
     #websocket;
     /** @type {Timeout} */
     #disconnect_timeout;
+    /** @type {Timeout} */
+    #reconnect_timeout;
+    /** @type {number} */
+    #reconnect_retries;
     /** @type {string} */
     url;
 
@@ -16,6 +20,8 @@ export class CustomWebSocket extends EventTarget {
         super();
         this.url = url;
         this.#disconnect_timeout = new Timeout(null);
+        this.#reconnect_timeout = new Timeout(this.tryConnect.bind(this));
+        this.#reconnect_retries = 0;
         this.#websocket = null;
         this.#connect();
     }
@@ -33,6 +39,7 @@ export class CustomWebSocket extends EventTarget {
     /** @param {Event} _event */
     #onOpen(_event) {
         this.dispatchEvent(new CustomEvent("open"));
+        this.#reconnect_retries = 0;
     }
 
     /** @param {MessageEvent<any>} event */
@@ -85,10 +92,14 @@ export class CustomWebSocket extends EventTarget {
     /** @param {Event} _event */
     #onError(_event) {
         this.tryDisconnect();
-        console.log(
-            "Error connecting to websocket. Reconnecting in 2 seconds.",
-        );
-        setTimeout(this.tryConnect.bind(this), 2000);
+        const reconnect_seconds = Math.round(Math.min(120, Math.pow(++this.#reconnect_retries, 1.5)));
+        if (this.#reconnect_timeout.finished) {
+            console.log(
+                `Error connecting to websocket. Reconnecting in ${reconnect_seconds} seconds.`,
+            );
+            this.#reconnect_timeout.setTimeout(reconnect_seconds * 1000);
+            this.#reconnect_timeout.start();
+        }
     }
 
     tryConnect() {

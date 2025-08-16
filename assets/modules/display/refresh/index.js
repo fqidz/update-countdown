@@ -112,8 +112,6 @@ export class RefreshButton extends EventTarget {
                 event.preventDefault();
             }
         });
-
-        this.enable();
     }
 }
 
