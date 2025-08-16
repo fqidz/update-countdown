@@ -103,9 +103,7 @@ export class UserStatistic {
                     if (unit_duration.time_unit > greatest_present_unit) {
                         greatest_present_unit = unit_duration.time_unit;
                     }
-                    const elem = getTimeUnitAsElem(
-                        unit_duration.time_unit,
-                    );
+                    const elem = getTimeUnitAsElem(unit_duration.time_unit);
                     const text = formatUnitDuration(
                         unit_duration.time_unit,
                         Math.floor(unit_duration.value),

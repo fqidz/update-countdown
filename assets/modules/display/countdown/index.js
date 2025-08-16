@@ -432,7 +432,7 @@ export class CountdownDisplay {
 
         const font_size_vw = `${String((FONT_SIZE_VW_RATIO * DISPLAY_VW) / text_len)}vw`;
 
-        let display_vh = isOnPhone() ? DISPLAY_VH_PHONE : DISPLAY_VH;
+        const display_vh = isOnPhone() ? DISPLAY_VH_PHONE : DISPLAY_VH;
         const font_size_vh = `${String((FONT_SIZE_VH_RATIO * display_vh) / text_num_lines)}vh`;
 
         const countdown_elem = countdownElems.get("container");

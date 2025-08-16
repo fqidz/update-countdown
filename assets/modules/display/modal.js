@@ -21,26 +21,25 @@ export const modal = {
         );
 
         open_button.addEventListener("click", (_event) => {
-            history.pushState(null, null, "#info")
+            history.pushState(null, null, "#info");
             modal.showModal();
         });
 
         close_button.addEventListener("click", (_event) => {
-            history.pushState(null, null, window.location.pathname)
+            history.pushState(null, null, window.location.pathname);
             modal.close();
         });
 
         modal.addEventListener("click", (event) => {
             if (lightDismiss(event) === true) {
-                history.pushState(null, null, window.location.pathname)
+                history.pushState(null, null, window.location.pathname);
             }
         });
 
         // Pressed 'Esc' key
         modal.addEventListener("cancel", (_event) => {
-            history.pushState(null, null, window.location.pathname)
-        })
-
+            history.pushState(null, null, window.location.pathname);
+        });
     },
 
     /** @param {string} dialog_id */

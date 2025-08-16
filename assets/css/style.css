@@ -146,7 +146,7 @@ a:hover {
     grid-template-columns: 1fr auto;
 }
 
-.blocky>* {
+.blocky > * {
     justify-self: end;
 }
 
@@ -175,16 +175,16 @@ a:hover {
     gap: clamp(1.2em, 2vw, 1.5em);
 }
 
-#navbar-toggle-button[aria-expanded="true"]>.open {
+#navbar-toggle-button[aria-expanded="true"] > .open {
     display: none;
 }
 
-#navbar-toggle-button[aria-expanded="false"]>.close,
-#navbar-toggle-button[aria-expanded="false"]+nav {
+#navbar-toggle-button[aria-expanded="false"] > .close,
+#navbar-toggle-button[aria-expanded="false"] + nav {
     display: none;
 }
 
-#navbar-toggle-button>svg {
+#navbar-toggle-button > svg {
     fill: var(--bg-600);
 }
 
@@ -203,25 +203,25 @@ a:hover {
     display: block;
 }
 
-#github-link>svg {
+#github-link > svg {
     fill: var(--github-color);
 }
 
 #theme-toggle {
-    & >svg {
+    & > svg {
         fill: var(--fg-50);
     }
 
-    & >.light {
+    & > .light {
         padding: 1px;
     }
 }
 
-[data-theme="light"] #theme-toggle>.light {
+[data-theme="light"] #theme-toggle > .light {
     display: none;
 }
 
-[data-theme="dark"] #theme-toggle>.dark {
+[data-theme="dark"] #theme-toggle > .dark {
     display: none;
 }
 
@@ -240,7 +240,7 @@ a:hover {
     row-gap: 1.5em;
 }
 
-.display-container>* {
+.display-container > * {
     width: fit-content;
     align-self: center;
     justify-self: center;
@@ -251,7 +251,7 @@ a:hover {
     justify-items: center;
 }
 
-.datetime-container>* {
+.datetime-container > * {
     width: fit-content;
     height: fit-content;
 }
@@ -273,7 +273,7 @@ a:hover {
     /* Prevent it still being clickable outside the div */
     overflow: hidden;
 
-    & [id$="-container"]>* {
+    & [id$="-container"] > * {
         display: inline;
     }
 }
@@ -296,7 +296,7 @@ a:hover {
     min-width: min-content;
 }
 
-#refresh>svg {
+#refresh > svg {
     fill: var(--fg-50);
     transition: fill 150ms ease-in;
 }
@@ -304,12 +304,11 @@ a:hover {
 #refresh:disabled {
     cursor: unset;
 
-    & >svg {
+    & > svg {
         fill: var(--bg-300);
         transition: fill 150ms ease-out;
     }
 }
-
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
@@ -340,7 +339,7 @@ a:hover {
         transition: filter 75ms ease-out;
     }
 
-    #refresh:enabled:hover>svg {
+    #refresh:enabled:hover > svg {
         filter: brightness(75%);
         transition:
             filter 50ms linear,
@@ -353,7 +352,7 @@ a:hover {
     padding-top: 0.5em;
     display: flex;
 
-    & >svg {
+    & > svg {
         fill: var(--bg-600);
     }
 }
@@ -386,7 +385,7 @@ a:hover {
     padding: clamp(2em, 5vw, 3em);
 }
 
-#info-modal  {
+#info-modal {
     & hr {
         height: 1px;
         border: 0;
@@ -424,7 +423,7 @@ a:hover {
     right: 1.5em;
 }
 
-#info-modal-close-button>svg {
+#info-modal-close-button > svg {
     fill: var(--bg-500);
 }
 
