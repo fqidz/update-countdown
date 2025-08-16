@@ -30,6 +30,8 @@
     --fg-50: var(--white-50);
     --bg-opposite: var(--white-100);
     --github-color: hsl(0, 0%, 100%);
+    --link-color: hsl(194.74, 53.27%, 79.02%); /* lightblue */
+    --link-visited-color: hsl(300, 47.29%, 74.71%); /* plum */
 }
 
 [data-theme="light"] {
@@ -43,6 +45,8 @@
     --fg-50: var(--gray-50);
     --bg-opposite: var(--gray-100);
     --github-color: hsl(212.7, 13.3%, 16.3%);
+    --link-color: hsl(248.51, 79.76%, 67.06%); /* slateblue */
+    --link-visited-color: hsl(322.25, 80.91%, 43.14%); /* mediumvioletred */
 }
 
 ::selection {
@@ -404,11 +408,11 @@ a:hover {
     }
 
     & a {
-        color: lightblue;
+        color: var(--link-color);
     }
 
     & a:visited {
-        color: plum;
+        color: var(--link-visited-color);
     }
 }
 
