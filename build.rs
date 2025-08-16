@@ -35,7 +35,7 @@ fn main() {
         .args(ESBUILD_PATHS.iter().map(|p| format!("{}/*", p)))
         .arg("--bundle")
         .arg("--minify")
-        .arg("--target=es2020")
+        .arg("--target=es2020,chrome112")
         .arg(format!(
             "--outdir={}",
             &output_path.join("assets").to_str().unwrap()
