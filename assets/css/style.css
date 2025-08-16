@@ -207,12 +207,14 @@ a:hover {
     fill: var(--github-color);
 }
 
-#theme-toggle>svg {
-    fill: var(--fg-50);
-}
+#theme-toggle {
+    & >svg {
+        fill: var(--fg-50);
+    }
 
-#theme-toggle>.light {
-    padding: 1px;
+    & >.light {
+        padding: 1px;
+    }
 }
 
 [data-theme="light"] #theme-toggle>.light {
@@ -270,10 +272,10 @@ a:hover {
     line-height: 0.8em;
     /* Prevent it still being clickable outside the div */
     overflow: hidden;
-}
 
-#countdown [id$="-container"]>* {
-    display: inline;
+    & [id$="-container"]>* {
+        display: inline;
+    }
 }
 
 .spacer {
@@ -301,17 +303,16 @@ a:hover {
 
 #refresh:disabled {
     cursor: unset;
-}
 
-#refresh:disabled>svg {
-    fill: var(--bg-300);
-    transition: fill 150ms ease-out;
+    & >svg {
+        fill: var(--bg-300);
+        transition: fill 150ms ease-out;
+    }
 }
 
 
 /* Matches devices that are using mouse/stylus */
 @media (hover: hover) and (pointer: fine) {
-
     #countdown,
     #datetime,
     #theme-toggle,
@@ -351,10 +352,10 @@ a:hover {
     padding: 2em;
     padding-top: 0.5em;
     display: flex;
-}
 
-.bottom-container>svg {
-    fill: var(--bg-600);
+    & >svg {
+        fill: var(--bg-600);
+    }
 }
 
 #user-count {
@@ -385,29 +386,31 @@ a:hover {
     padding: clamp(2em, 5vw, 3em);
 }
 
-#info-modal hr {
-    height: 1px;
-    border: 0;
-    background-color: var(--bg-300);
-    width: 100%;
-}
+#info-modal  {
+    & hr {
+        height: 1px;
+        border: 0;
+        background-color: var(--bg-300);
+        width: 100%;
+    }
 
-#info-modal h2 {
-    margin-bottom: 0.5em;
-    margin-left: min(0.5vw, 0.5em);
-}
+    & h2 {
+        margin-bottom: 0.5em;
+        margin-left: min(0.5vw, 0.5em);
+    }
 
-#info-modal p {
-    margin-bottom: 1em;
-    margin-left: min(1.5vw, 1.5em);
-}
+    & p {
+        margin-bottom: 1em;
+        margin-left: min(1.5vw, 1.5em);
+    }
 
-#info-modal a {
-    color: lightblue;
-}
+    & a {
+        color: lightblue;
+    }
 
-#info-modal a:visited {
-    color: plum;
+    & a:visited {
+        color: plum;
+    }
 }
 
 .info-modal-contents {
