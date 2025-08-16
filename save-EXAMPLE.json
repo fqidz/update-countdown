@@ -1,4 +1,6 @@
 {
-    "battlebit": "2026-4-15T12:00:00Z",
-    "portal_3": "10034-6-15T12:00:00Z"
+  "battlebit": {
+    "datetime": "2026-4-15T12:00:00Z",
+    "click_count": 0
+  }
 }
