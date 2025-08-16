@@ -33,6 +33,8 @@
               pkgs.minify
               pkgs.upx
 
+              pkgs.lld
+
               # pkgs.biome
               # pkgs.chromium
               # pkgs.oha
@@ -51,6 +53,8 @@
               pkgs.esbuild
               pkgs.minify
               pkgs.upx
+
+              pkgs.lld
             ];
           };
 
