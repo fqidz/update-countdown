@@ -8,12 +8,13 @@ use axum::extract::{State, WebSocketUpgrade};
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{body::Bytes, http::StatusCode};
 
-use chrono::TimeDelta;
+use chrono::{TimeDelta, Utc};
 use futures::{SinkExt, stream::StreamExt};
 use rand::distr::Distribution;
 use rand::{SeedableRng, distr::Uniform, rngs::SmallRng};
 use tokio::time::interval;
 
+use crate::datetime::datetime_difference;
 use crate::AppState;
 
 const SECS_INCREMENT_RANGE: Range<i64> = (25 * 60)..(35 * 60);
@@ -24,6 +25,7 @@ const MAX_MESSAGES_PER_INTERVAL: u8 = 10;
 struct CountdownTemplate {
     title: String,
     datetime: i64,
+    datetime_duration: String,
 }
 
 pub async fn root() -> Redirect {
@@ -172,6 +174,7 @@ pub async fn battlebit(State(state): State<Arc<AppState>>) -> impl IntoResponse 
     let template = CountdownTemplate {
         title: "BattleBit Remastered".to_string(),
         datetime: datetime.timestamp(),
+        datetime_duration: datetime_difference(Utc::now().naive_utc(), datetime.naive_utc()),
     };
 
     let html = template.render().unwrap();

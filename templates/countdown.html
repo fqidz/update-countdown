@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
 
+{% block description %}{{ title }} updates in {{ datetime_duration }}{% endblock %}
+
 {% block head %}
 <script type="module" src="/assets/scripts/countdown.js"></script>
 <base target="_blank">
