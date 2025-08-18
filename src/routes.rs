@@ -63,6 +63,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
             page_state.user_count += 1;
             incremented_user_count.store(true, Ordering::SeqCst);
 
+            tx.send(page_state.datetime.timestamp()).unwrap();
+
             // Send incremented user count
             tx.send(page_state.user_count as i64 * -1).unwrap();
             drop(write_lock);
